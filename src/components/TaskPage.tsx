@@ -1,90 +1,137 @@
-import { useState , useEffect} from "react";
-import { Tabs, TabPanels, Box, Spinner} from '@chakra-ui/react'
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Container,
+  Grid,
+  Paper,
+  Typography,
+  CircularProgress,
+  Tabs,
+  Tab,
+} from "@mui/material";
 import { taskCategory, task } from "../types/taskapi";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { accessTokenSelector, activeCategoryTasksState, activeTaskCategoryState, taskObjectState, taskCategoriesListState, messageState, isOnlineSelector } from "../config/states";
+import {
+  accessTokenSelector,
+  activeCategoryTasksState,
+  activeTaskCategoryState,
+  taskObjectState,
+  taskCategoriesListState,
+  messageState,
+  isOnlineSelector,
+} from "../config/states";
 import { Task } from "../helpers/task";
-import TaskList from "./ui/TaskList";
-import AddTaskForm from "./ui/AddTaskForm";
-import TaskCategoryList from "./ui/TaskCategoryList";
-
-
+import TaskColumn from "./ui/TaskColumn";
+import AddTaskFab from "./ui/AddTaskFab";
 
 export default function TaskPage() {
-  const [Taskobject, setTaskobject] = useRecoilState(taskObjectState)
-  const access_token = useRecoilValue(accessTokenSelector)
+  const [taskObject, setTaskObject] = useRecoilState(taskObjectState);
+  const access_token = useRecoilValue(accessTokenSelector);
 
-  if (!access_token) return <div>Not logged in</div>
-  
+  if (!access_token) return <div>Not logged in</div>;
 
-  const [taskCategoryList, setTaskCategoryList] = useRecoilState<taskCategory[]>(taskCategoriesListState)
-  const [activeTaskCategory] = useRecoilState<number>(activeTaskCategoryState)
-  const setActiveCategoryTasks = useSetRecoilState<task[]>(activeCategoryTasksState)
-  const [loading, setloading] = useState(true)
-  const [toastMessage, setToastMessage] = useRecoilState(messageState)
-  const isOnline = useRecoilValue(isOnlineSelector)
-  
+  const [taskCategoryList, setTaskCategoryList] = useRecoilState<
+    taskCategory[]
+  >(taskCategoriesListState);
+  const [activeTaskCategory, setActiveTaskCategory] = useRecoilState<number>(
+    activeTaskCategoryState
+  );
+  const setActiveCategoryTasks = useSetRecoilState<task[]>(
+    activeCategoryTasksState
+  );
+  const [loading, setLoading] = useState(true);
+  const [toastMessage, setToastMessage] = useRecoilState(messageState);
+  const isOnline = useRecoilValue(isOnlineSelector);
+
   useEffect(() => {
-    console.log('before task object', Taskobject, access_token)
-    const newtaskObject = new Task(access_token)
+    console.log("before task object", taskObject, access_token);
+    const newtaskObject = new Task(access_token);
     newtaskObject.setErrorHandler((err) => {
-      console.log('error', err)
+      console.log("error", err);
       if (toastMessage) return;
-      setToastMessage({title: 'Error', body: err.message, type: 'error'})
-    })
-    setTaskobject(newtaskObject)
-  }, [])
-  
+      setToastMessage({ title: "Error", body: err.message, type: "error" });
+    });
+    setTaskObject(newtaskObject);
+  }, []);
 
   useEffect(() => {
-    console.log('after task object', Taskobject)
-    Taskobject.getTaskCategories().then((data) => {
-      setTaskCategoryList(data)
-      return data
-    }).then(() => {
-      Taskobject.getTasksByCategoryPosition(activeTaskCategory >= 0 ? activeTaskCategory : 0).then((data) => {
-        setActiveCategoryTasks(data)
-        setloading(false)
+    console.log("after task object", taskObject);
+    taskObject
+      .getTaskCategories()
+      .then((data) => {
+        setTaskCategoryList(data);
+        return data;
       })
-    })
-  }, [Taskobject])
+      .then(() => {
+        taskObject
+          .getTasksByCategoryPosition(
+            activeTaskCategory >= 0 ? activeTaskCategory : 0
+          )
+          .then((data) => {
+            setActiveCategoryTasks(data);
+            setLoading(false);
+          });
+      });
+  }, [taskObject]);
 
   useEffect(() => {
-    console.log('a active task or online changed', navigator.onLine)
-    setloading(true)
+    console.log("active task or online changed", navigator.onLine);
+    setLoading(true);
     if (activeTaskCategory < 0) return;
-    Taskobject.getTasksByCategoryPosition(activeTaskCategory).then((data) => {
-      setActiveCategoryTasks(data)
-      setloading(false)
-    })
-  }, [activeTaskCategory, isOnline])
+    taskObject.getTasksByCategoryPosition(activeTaskCategory).then((data) => {
+      setActiveCategoryTasks(data);
+      setLoading(false);
+    });
+  }, [activeTaskCategory, isOnline]);
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTaskCategory(newValue);
+  };
+
+  if (loading || taskCategoryList?.length <= 0) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="80vh"
+      >
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
 
   return (
-    <div className="">
-        <Tabs variant='soft-rounded' colorScheme='green' h='80%' defaultIndex={activeTaskCategory} >
-          <TaskCategoryList />
-        {
-          loading || taskCategoryList?.length <= 0 ? (
-            <Box p={4} h='90%' display='flex' justifyContent='center' alignItems='center'>
-              <Spinner size='xl' />
-            </Box>) : (
-              <>
-                <TabPanels p={4} h='90%'>
-                  {
-                    taskCategoryList?.map((val, key) => (
-                      <TaskList key={key} taskCategory={val?.tasks ?? []} />
-                    ))
-                  }
-                </TabPanels>
-                <Box >
-                  { taskCategoryList.length > 0 && activeTaskCategory >= 0 &&  <AddTaskForm />}
-                </Box>
-              </>
-            )
-        }
+    <Container maxWidth="xl" sx={{ py: 2 }}>
+      {/* Header with navigation tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+        <Tabs
+          value={activeTaskCategory >= 0 ? activeTaskCategory : 0}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+        >
+          {taskCategoryList.map((category, index) => (
+            <Tab key={index} label={category.name} />
+          ))}
         </Tabs>
-    </div>
+      </Box>
+
+      {/* Task columns in grid layout */}
+      <Grid container spacing={3}>
+        {taskCategoryList.map((category, index) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
+            <TaskColumn
+              category={category}
+              isActive={activeTaskCategory === index}
+            />
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Floating action button */}
+      {taskCategoryList.length > 0 && activeTaskCategory >= 0 && <AddTaskFab />}
+    </Container>
   );
 }
-
