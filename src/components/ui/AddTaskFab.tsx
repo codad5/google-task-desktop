@@ -12,10 +12,10 @@ import {
 import { Add } from "@mui/icons-material";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
-  taskObjectState,
   taskCategoriesListSelector,
   activeTaskCategorySelector,
   activeCategoryTasksState,
+  taskObjectSelector,
 } from "../../config/states";
 import { task } from "../../types/taskapi";
 import { isRegistered, register } from "@tauri-apps/api/globalShortcut";
@@ -27,7 +27,7 @@ export default function AddTaskFab() {
   const [taskDescription, setTaskDescription] = useState("");
   const titleInputRef = useRef<HTMLInputElement>(null);
 
-  const taskObject = useRecoilValue(taskObjectState);
+  const taskObject = useRecoilValue(taskObjectSelector);
   const taskCategoryList = useRecoilValue(taskCategoriesListSelector);
   const activeTaskCategory = useRecoilValue(activeTaskCategorySelector);
   const [activeCategoryTasks, setActiveCategoryTasks] = useRecoilState(
@@ -77,6 +77,8 @@ export default function AddTaskFab() {
       dueDate: new Date(),
       completed: false,
     };
+
+    console.log("adding task", newTask);
 
     // Optimistically update the state
     const oldTasks = activeCategoryTasks;

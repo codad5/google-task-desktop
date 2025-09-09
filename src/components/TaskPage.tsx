@@ -3,8 +3,6 @@ import {
   Box,
   Container,
   Grid,
-  Paper,
-  Typography,
   CircularProgress,
   Tabs,
   Tab,
@@ -15,17 +13,16 @@ import {
   accessTokenSelector,
   activeCategoryTasksState,
   activeTaskCategoryState,
-  taskObjectState,
   taskCategoriesListState,
   messageState,
   isOnlineSelector,
+  taskObjectSelector,
 } from "../config/states";
-import { Task } from "../helpers/task";
 import TaskColumn from "./ui/TaskColumn";
 import AddTaskFab from "./ui/AddTaskFab";
 
 export default function TaskPage() {
-  const [taskObject, setTaskObject] = useRecoilState(taskObjectState);
+  const taskObject = useRecoilValue(taskObjectSelector);
   const access_token = useRecoilValue(accessTokenSelector);
 
   if (!access_token) return <div>Not logged in</div>;
@@ -43,46 +40,86 @@ export default function TaskPage() {
   const [toastMessage, setToastMessage] = useRecoilState(messageState);
   const isOnline = useRecoilValue(isOnlineSelector);
 
+  // This effect runs when taskObject changes (which happens when accessToken changes)
   useEffect(() => {
-    console.log("before task object", taskObject, access_token);
-    const newtaskObject = new Task(access_token);
-    newtaskObject.setErrorHandler((err) => {
-      console.log("error", err);
-      if (toastMessage) return;
-      setToastMessage({ title: "Error", body: err.message, type: "error" });
-    });
-    setTaskObject(newtaskObject);
-  }, []);
+    console.log("TaskPage: taskObject changed, loading categories and tasks");
 
-  useEffect(() => {
-    console.log("after task object", taskObject);
+    if (!taskObject || !access_token) {
+      console.log("TaskPage: no taskObject or access_token, skipping load");
+      return;
+    }
+
+    setLoading(true);
+
+    // Load task categories
     taskObject
       .getTaskCategories()
       .then((data) => {
+        console.log("TaskPage: got categories", data);
         setTaskCategoryList(data);
-        return data;
-      })
-      .then(() => {
-        taskObject
-          .getTasksByCategoryPosition(
-            activeTaskCategory >= 0 ? activeTaskCategory : 0
-          )
-          .then((data) => {
-            setActiveCategoryTasks(data);
-            setLoading(false);
-          });
-      });
-  }, [taskObject]);
 
+        // Load tasks for the active category
+        const categoryIndex = activeTaskCategory >= 0 ? activeTaskCategory : 0;
+        return taskObject.getTasksByCategoryPosition(categoryIndex);
+      })
+      .then((tasks) => {
+        console.log("TaskPage: got tasks", tasks);
+        setActiveCategoryTasks(tasks);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("TaskPage: error loading data", error);
+        setToastMessage({
+          title: "Error",
+          body: "Failed to load tasks",
+          type: "error",
+        });
+        setLoading(false);
+      });
+  }, [taskObject, access_token]); // Only depend on taskObject and access_token
+
+  // This effect runs when active category or online status changes
   useEffect(() => {
-    console.log("active task or online changed", navigator.onLine);
-    setLoading(true);
-    if (activeTaskCategory < 0) return;
-    taskObject.getTasksByCategoryPosition(activeTaskCategory).then((data) => {
-      setActiveCategoryTasks(data);
-      setLoading(false);
-    });
-  }, [activeTaskCategory, isOnline]);
+    console.log("TaskPage: active category or online status changed");
+
+    if (!taskObject || activeTaskCategory < 0) {
+      console.log(
+        "TaskPage: skipping category change - no taskObject or invalid category"
+      );
+      return;
+    }
+
+    // Don't set loading if we're already loading from the first effect
+    const shouldSetLoading = taskCategoryList.length > 0;
+    if (shouldSetLoading) {
+      setLoading(true);
+    }
+
+    taskObject
+      .getTasksByCategoryPosition(activeTaskCategory)
+      .then((data) => {
+        console.log(
+          "TaskPage: got tasks for category",
+          activeTaskCategory,
+          data
+        );
+        setActiveCategoryTasks(data);
+        if (shouldSetLoading) {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error("TaskPage: error loading tasks for category", error);
+        setToastMessage({
+          title: "Error",
+          body: "Failed to load tasks for category",
+          type: "error",
+        });
+        if (shouldSetLoading) {
+          setLoading(false);
+        }
+      });
+  }, [activeTaskCategory, isOnline, taskCategoryList.length]); // Added taskCategoryList.length as dependency
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTaskCategory(newValue);

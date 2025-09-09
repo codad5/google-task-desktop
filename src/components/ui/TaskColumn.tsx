@@ -27,11 +27,11 @@ import {
 } from "@mui/icons-material";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import {
-  taskObjectState,
   taskCategoriesListSelector,
   activeTaskCategorySelector,
   activeCategoryTasksState,
   messageState,
+  taskObjectSelector,
 } from "../../config/states";
 import { task, taskCategory } from "../../types/taskapi";
 
@@ -45,7 +45,7 @@ export default function TaskColumn({ category, isActive }: TaskColumnProps) {
   const [newTaskText, setNewTaskText] = useState("");
   const [showAddTask, setShowAddTask] = useState(false);
 
-  const taskObject = useRecoilValue(taskObjectState);
+  const taskObject = useRecoilValue(taskObjectSelector);
   const taskCategoryList = useRecoilValue(taskCategoriesListSelector);
   const activeTaskCategory = useRecoilValue(activeTaskCategorySelector);
   const setActiveCategoryTasks = useSetRecoilState(activeCategoryTasksState);
