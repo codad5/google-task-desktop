@@ -130,7 +130,11 @@ export default function Sidebar({ onCategorySelect }: SidebarProps) {
         {/* Lists Section Header */}
         <ListItemButton
           onClick={() => setListsExpanded(!listsExpanded)}
-          sx={{ py: 0.5 }}
+          style={{
+            height: "48px",
+            flexGrow: 0,
+          }}
+          sx={{ }}
         >
           <ListItemText
             primary="Lists"
