@@ -252,25 +252,39 @@ export async function handleLoadFrom(accessTokenBody: AccessToken) {
 }
   
 export async function handleLogout() {
-    setRecoil(authLoadingState, true)
-    // Clear old auth atoms
-    setRecoil(accessTokenState, null);
-    setRecoil(userProfileState, null);
-    setRecoil(activeTaskCategoryState, -1)
-    setRecoil(activeCategoryTasksState, [])
+    console.log("handleLogout: starting");
+    setRecoil(authLoadingState, true);
     
-    // Clear new store atoms (import from store)
     try {
-      const { accessTokenAtom, taskListsAtom, starredTaskIdsAtom } = await import("../store");
-      setRecoil(accessTokenAtom, null);
-      setRecoil(taskListsAtom, []);
-      setRecoil(starredTaskIdsAtom, new Set());
+      // Clear old auth atoms
+      setRecoil(accessTokenState, null);
+      setRecoil(userProfileState, null);
+      setRecoil(activeTaskCategoryState, -1);
+      setRecoil(activeCategoryTasksState, []);
+      
+      // Clear new store atoms using static import
+      // Note: Import at top of file for reliability
+      const store = await import("../store");
+      if (store.accessTokenAtom) setRecoil(store.accessTokenAtom, null);
+      if (store.taskListsAtom) setRecoil(store.taskListsAtom, []);
+      if (store.starredTaskIdsAtom) setRecoil(store.starredTaskIdsAtom, new Set());
+      
+      // Delete stored tokens
+      try {
+        await deleteAccessToken();
+        console.log("handleLogout: access token deleted");
+      } catch (e) {
+        console.log("handleLogout: error deleting token (may not exist)", e);
+      }
+      
+      console.log("handleLogout: complete");
     } catch (e) {
-      console.log("Could not clear new store atoms", e);
+      console.error("handleLogout: error during logout", e);
+    } finally {
+      // ALWAYS set loading to false
+      setRecoil(authLoadingState, false);
+      console.log("handleLogout: loading set to false");
     }
-    
-    await deleteAccessToken();
-    setRecoil(authLoadingState, false)
   }
 
 
