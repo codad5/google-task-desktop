@@ -13,17 +13,17 @@ import { AppTaskList, UserProfile, ViewState, ToastMessage } from "../types/app"
 // =============================================================================
 
 export const accessTokenAtom = atom<string | null>({
-  key: "accessToken",
+  key: "accessTokenV2",
   default: null,
 });
 
 export const userProfileAtom = atom<UserProfile | null>({
-  key: "userProfile",
+  key: "userProfileV2",
   default: null,
 });
 
 export const authLoadingAtom = atom<boolean>({
-  key: "authLoading",
+  key: "authLoadingV2",
   default: true,
 });
 

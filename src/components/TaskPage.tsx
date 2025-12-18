@@ -1,127 +1,64 @@
-import { useState, useEffect } from "react";
-import { Box, CircularProgress } from "@mui/material";
-import { taskCategory, task } from "../types/taskapi";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import {
-  accessTokenSelector,
-  activeCategoryTasksState,
-  activeTaskCategoryState,
-  taskCategoriesListState,
-  messageState,
-  isOnlineSelector,
-  taskObjectSelector,
-} from "../config/states";
+/**
+ * Task Page
+ * 
+ * Main page that displays task lists.
+ * Bridges old auth system with new hooks.
+ */
+
+import { useEffect } from "react";
+import { Box, CircularProgress, Typography } from "@mui/material";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { accessTokenSelector } from "../config/states";
+import { accessTokenAtom } from "../store";
+import { useTaskLists } from "../hooks";
 import { TaskListsContainer } from "./tasks";
 
 export default function TaskPage() {
-  const taskObject = useRecoilValue(taskObjectSelector);
+  // Get access token from OLD auth system
   const access_token = useRecoilValue(accessTokenSelector);
+  
+  // Set access token in NEW store system
+  const setNewAccessToken = useSetRecoilState(accessTokenAtom);
 
-  if (!access_token) return <div>Not logged in</div>;
+  // Get task lists state from NEW hooks
+  const { taskLists, loading, error, fetchTaskLists } = useTaskLists();
 
-  const [taskCategoryList, setTaskCategoryList] = useRecoilState<
-    taskCategory[]
-  >(taskCategoriesListState);
-  const [activeTaskCategory] = useRecoilState<number>(
-    activeTaskCategoryState
-  );
-  const setActiveCategoryTasks = useSetRecoilState<task[]>(
-    activeCategoryTasksState
-  );
-  const [loading, setLoading] = useState(true);
-  const [, setToastMessage] = useRecoilState(messageState);
-  const isOnline = useRecoilValue(isOnlineSelector);
-
-  // This effect runs when taskObject changes (which happens when accessToken changes)
+  // Sync access token from old system to new system
   useEffect(() => {
-    console.log("TaskPage: taskObject changed, loading categories and tasks");
-
-    if (!taskObject || !access_token) {
-      console.log("TaskPage: no taskObject or access_token, skipping load");
-      return;
+    if (access_token) {
+      console.log("TaskPage: syncing access token to new store");
+      setNewAccessToken(access_token);
     }
+  }, [access_token, setNewAccessToken]);
 
-    setLoading(true);
-
-    // Load task categories
-    taskObject
-      .getTaskCategories()
-      .then((data) => {
-        console.log("TaskPage: got categories", data);
-        setTaskCategoryList(data);
-
-        // Load tasks for the active category
-        const categoryIndex = activeTaskCategory >= 0 ? activeTaskCategory : 0;
-        return taskObject.getTasksByCategoryPosition(categoryIndex);
-      })
-      .then((tasks) => {
-        console.log("TaskPage: got tasks", tasks);
-        setActiveCategoryTasks(tasks);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("TaskPage: error loading data", error);
-        setToastMessage({
-          title: "Error",
-          body: "Failed to load tasks",
-          type: "error",
-        });
-        setLoading(false);
-      });
-  }, [taskObject, access_token]); // Only depend on taskObject and access_token
-
-  // This effect runs when active category or online status changes
+  // Fetch task lists when access token is available
   useEffect(() => {
-    console.log("TaskPage: active category or online status changed");
-
-    if (!taskObject || activeTaskCategory < 0) {
-      console.log(
-        "TaskPage: skipping category change - no taskObject or invalid category"
-      );
-      return;
+    if (access_token) {
+      console.log("TaskPage: fetching task lists");
+      fetchTaskLists();
     }
+  }, [access_token, fetchTaskLists]);
 
-    // Don't set loading if we're already loading from the first effect
-    const shouldSetLoading = taskCategoryList.length > 0;
-    if (shouldSetLoading) {
-      setLoading(true);
-    }
-
-    taskObject
-      .getTasksByCategoryPosition(activeTaskCategory)
-      .then((data) => {
-        console.log(
-          "TaskPage: got tasks for category",
-          activeTaskCategory,
-          data
-        );
-        setActiveCategoryTasks(data);
-        if (shouldSetLoading) {
-          setLoading(false);
-        }
-      })
-      .catch((error) => {
-        console.error("TaskPage: error loading tasks for category", error);
-        setToastMessage({
-          title: "Error",
-          body: "Failed to load tasks for category",
-          type: "error",
-        });
-        if (shouldSetLoading) {
-          setLoading(false);
-        }
-      });
-  }, [activeTaskCategory, isOnline, taskCategoryList.length]); // Added taskCategoryList.length as dependency
-
-  if (loading || taskCategoryList?.length <= 0) {
+  if (!access_token) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        flex={1}
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
+        <Typography>Not logged in</Typography>
+      </Box>
+    );
+  }
+
+  if (loading && taskLists.length === 0) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
         <CircularProgress size={60} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
+        <Typography color="error">{error}</Typography>
       </Box>
     );
   }
