@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import {
   Box,
   Button,
-  CircularProgress,
   Typography,
   Snackbar,
   Alert,
@@ -28,6 +27,7 @@ import {
   messageState,
 } from "./config/states";
 import Header from "./components/ui/Header";
+import SplashScreen from "./components/ui/SplashScreen";
 import { Sidebar, DisclaimerBanner } from "./components/layout";
 import { listen_for_auth_code } from "./helpers/eventlistner";
 import { SettingsStore } from "./helpers/DBStores";
@@ -172,6 +172,8 @@ function App() {
           {/* Content */}
           {loggedIn ? (
             <TaskPage />
+          ) : loading ? (
+            <SplashScreen message="Connecting to Google" />
           ) : (
             <Box
               display="flex"
@@ -181,18 +183,14 @@ function App() {
               flex={1}
               textAlign="center"
             >
-              {loading ? (
-                <CircularProgress size={60} />
-              ) : (
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => setAttemptedLogin(true)}
-                  sx={{ textTransform: "none", py: 1.5, px: 4 }}
-                >
-                  Sign in with Google
-                </Button>
-              )}
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => setAttemptedLogin(true)}
+                sx={{ textTransform: "none", py: 1.5, px: 4 }}
+              >
+                Sign in with Google
+              </Button>
             </Box>
           )}
 
