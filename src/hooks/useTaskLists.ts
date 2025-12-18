@@ -114,16 +114,13 @@ export function useTaskLists() {
   }, [service, setTaskLists]);
 
   /**
-   * Toggle list visibility
+   * Toggle list visibility (directly in Recoil state)
    */
   const toggleListVisibility = useCallback((id: string) => {
-    if (!service) return;
-
-    const isVisible = service.toggleVisibility(id);
     setTaskLists(prev => prev.map(list => 
-      list.id === id ? { ...list, isVisible } : list
+      list.id === id ? { ...list, isVisible: !list.isVisible } : list
     ));
-  }, [service, setTaskLists]);
+  }, [setTaskLists]);
 
   return {
     // Data
