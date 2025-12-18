@@ -2,6 +2,7 @@
  * Task Lists Container
  * 
  * Horizontal scrollable container for task list cards with drag-and-drop.
+ * Also shows StarredTasksCard when in starred view.
  */
 
 import { useRef, useState, useEffect } from "react";
@@ -28,6 +29,7 @@ import { useRecoilValue } from "recoil";
 import { viewStateAtom } from "../../store";
 import TaskListCard from "./TaskListCard";
 import SortableTaskCard from "./SortableTaskCard";
+import StarredTasksCard from "./StarredTasksCard";
 
 export default function TaskListsContainer() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -115,6 +117,24 @@ export default function TaskListsContainer() {
         <Typography color="text.secondary">
           No task lists yet. Create one to get started!
         </Typography>
+      </Box>
+    );
+  }
+
+  // Show StarredTasksCard when in starred view
+  if (viewState.view === "starred") {
+    return (
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          py: 2,
+          px: 4,
+        }}
+      >
+        <StarredTasksCard />
       </Box>
     );
   }
