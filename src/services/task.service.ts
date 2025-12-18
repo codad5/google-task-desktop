@@ -4,7 +4,7 @@
  * Business logic for task operations.
  */
 
-import { GoogleTask, TaskRequestBody, MoveTaskParams } from "../types/google-tasks";
+import { TaskRequestBody, MoveTaskParams } from "../types/google-tasks";
 import { AppTask, CreateTaskInput, UpdateTaskInput } from "../types/app";
 import { ITaskRepository, IStarredRepository } from "../repositories/interfaces";
 
@@ -108,7 +108,7 @@ export class TaskService {
   /**
    * Toggle task starred status
    */
-  async toggleStar(listId: string, taskId: string): Promise<boolean> {
+  async toggleStar(_listId: string, taskId: string): Promise<boolean> {
     return this.starredRepo.toggle(taskId);
   }
 

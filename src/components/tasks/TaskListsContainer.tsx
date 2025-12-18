@@ -1,13 +1,12 @@
-import { useRef, useState } from "react";
-import { Box, IconButton } from "@mui/material";
+/**
+ * Task Lists Container
+ * 
+ * Horizontal scrollable container for task list cards with drag-and-drop.
+ */
+
+import { useRef, useState, useEffect } from "react";
+import { Box, IconButton, Typography, CircularProgress } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
-import { useRecoilState, useRecoilValue } from "recoil";
-import {
-  taskCategoriesListState,
-  activeTaskCategorySelector,
-} from "../../config/states";
-import { taskCategory } from "../../types/taskapi";
-import TaskListCard from "./TaskListCard";
 import {
   DndContext,
   closestCenter,
@@ -20,23 +19,31 @@ import {
   DragOverlay,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useTaskLists } from "../../hooks";
+import { useRecoilValue } from "recoil";
+import { viewStateAtom } from "../../store";
+import TaskListCard from "./TaskListCard";
 import SortableTaskCard from "./SortableTaskCard";
 
 export default function TaskListsContainer() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [taskCategories, setTaskCategories] = useRecoilState(taskCategoriesListState);
-  const activeTaskCategory = useRecoilValue(activeTaskCategorySelector);
+  const { taskLists, loading, error, fetchTaskLists, reorderTaskLists } = useTaskLists();
+  const viewState = useRecoilValue(viewStateAtom);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Fetch task lists on mount
+  useEffect(() => {
+    fetchTaskLists();
+  }, [fetchTaskLists]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Start drag after moving 8px
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -56,26 +63,61 @@ export default function TaskListsContainer() {
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    document.body.style.cursor = "grabbing";
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    document.body.style.cursor = "";
 
     if (over && active.id !== over.id) {
-      const oldIndex = taskCategories.findIndex((cat) => cat.id === active.id);
-      const newIndex = taskCategories.findIndex((cat) => cat.id === over.id);
+      const oldIndex = taskLists.findIndex((list) => list.id === active.id);
+      const newIndex = taskLists.findIndex((list) => list.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
-        const newCategories = arrayMove(taskCategories, oldIndex, newIndex);
-        setTaskCategories(newCategories);
+        reorderTaskLists(oldIndex, newIndex);
       }
     }
   };
 
-  const activeCategory = activeId
-    ? taskCategories.find((cat) => cat.id === activeId)
+  const handleDragCancel = () => {
+    setActiveId(null);
+    document.body.style.cursor = "";
+  };
+
+  const activeList = activeId
+    ? taskLists.find((list) => list.id === activeId)
     : null;
+
+  // Filter visible lists
+  const visibleLists = taskLists.filter(list => list.isVisible);
+
+  if (loading && taskLists.length === 0) {
+    return (
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
+  if (taskLists.length === 0) {
+    return (
+      <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Typography color="text.secondary">
+          No task lists yet. Create one to get started!
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -114,9 +156,10 @@ export default function TaskListsContainer() {
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <SortableContext
-          items={taskCategories.map((cat) => cat.id)}
+          items={visibleLists.map((list) => list.id)}
           strategy={horizontalListSortingStrategy}
         >
           <Box
@@ -140,25 +183,30 @@ export default function TaskListsContainer() {
               },
             }}
           >
-            {taskCategories.map((category, index) => (
+            {visibleLists.map((list, index) => (
               <SortableTaskCard
-                key={category.id}
-                category={category}
-                isActive={activeTaskCategory === index}
-                categoryIndex={index}
+                key={list.id}
+                taskList={list}
+                isActive={viewState.activeListId === list.id}
               />
             ))}
           </Box>
         </SortableContext>
 
-        {/* Drag Overlay - shows the dragging item */}
+        {/* Drag Overlay */}
         <DragOverlay>
-          {activeCategory ? (
-            <Box sx={{ opacity: 0.9, transform: "rotate(3deg)" }}>
+          {activeList ? (
+            <Box 
+              sx={{ 
+                opacity: 0.9, 
+                transform: "rotate(3deg)",
+                cursor: "grabbing",
+              }}
+            >
               <TaskListCard
-                category={activeCategory}
+                taskList={activeList}
                 isActive={false}
-                categoryIndex={-1}
+                isDragOverlay
               />
             </Box>
           ) : null}

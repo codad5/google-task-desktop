@@ -5,7 +5,7 @@
  * Orchestrates repository calls and handles caching.
  */
 
-import { GoogleTaskList, TaskListRequestBody } from "../types/google-tasks";
+import { TaskListRequestBody } from "../types/google-tasks";
 import { AppTaskList } from "../types/app";
 import { ITaskListRepository, ITaskRepository, IStarredRepository } from "../repositories/interfaces";
 
@@ -209,7 +209,11 @@ export class TaskListService {
     const taskIndex = list.tasks.findIndex(t => t.id === taskId);
     if (taskIndex === -1) return;
 
-    list.tasks[taskIndex] = { ...list.tasks[taskIndex], ...updates };
+    list.tasks[taskIndex] = { 
+      ...list.tasks[taskIndex], 
+      ...updates,
+      status: updates.status as "needsAction" | "completed" ?? list.tasks[taskIndex].status,
+    };
     
     // Recompute incomplete count if status changed
     if (updates.status !== undefined) {

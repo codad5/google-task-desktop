@@ -1,3 +1,10 @@
+/**
+ * Task List Item
+ * 
+ * Individual task row with checkbox, star, and options menu.
+ */
+
+import { useState } from "react";
 import {
   ListItem,
   ListItemButton,
@@ -8,26 +15,39 @@ import {
   Box,
   Typography,
   Chip,
+  Menu,
+  MenuItem,
+  ListItemIcon as MenuItemIcon,
+  Divider,
 } from "@mui/material";
 import {
   RadioButtonUnchecked,
   CheckCircle,
+  StarBorder,
+  Star,
+  MoreVert,
   Delete,
+  DriveFileMove,
   Event,
+  Check,
 } from "@mui/icons-material";
-import { task } from "../../types/taskapi";
+import { AppTask, AppTaskList } from "../../types/app";
+import { useRecoilValue } from "recoil";
+import { taskListsAtom } from "../../store";
 
 interface TaskListItemProps {
-  task: task;
-  onToggle: (task: task) => void;
-  onDelete: (task: task) => void;
+  task: AppTask;
+  onToggle: (task: AppTask) => void;
+  onStar: (task: AppTask) => void;
+  onDelete: (task: AppTask) => void;
+  onMove: (task: AppTask, toListId: string) => void;
 }
 
-// Helper to format due date nicely
-const formatDueDate = (date: Date | string | undefined) => {
+// Helper to format due date
+const formatDueDate = (date: string | undefined) => {
   if (!date) return null;
   
-  const dueDate = typeof date === "string" ? new Date(date) : date;
+  const dueDate = new Date(date);
   if (isNaN(dueDate.getTime())) return null;
 
   const today = new Date();
@@ -35,10 +55,7 @@ const formatDueDate = (date: Date | string | undefined) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const isOverdue = dueDate < today && dueDate.toDateString() !== today.toDateString();
-  const timeStr = dueDate.getHours() !== 0 || dueDate.getMinutes() !== 0
-    ? dueDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : null;
-
+  
   let dateLabel = "";
   if (dueDate.toDateString() === today.toDateString()) {
     dateLabel = "Today";
@@ -48,52 +65,100 @@ const formatDueDate = (date: Date | string | undefined) => {
     dateLabel = dueDate.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 
-  return {
-    label: timeStr ? `${dateLabel}, ${timeStr}` : dateLabel,
-    isOverdue,
-  };
+  return { label: dateLabel, isOverdue };
 };
 
 export default function TaskListItem({
   task,
   onToggle,
+  onStar,
   onDelete,
+  onMove,
 }: TaskListItemProps) {
-  const dueDateInfo = formatDueDate(task.dueDate);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [moveAnchorEl, setMoveAnchorEl] = useState<null | HTMLElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const taskLists = useRecoilValue(taskListsAtom);
+  const dueDateInfo = formatDueDate(task.due);
+
+  const handleMenuClick = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setMoveAnchorEl(null);
+  };
+
+  const handleMoveClick = (e: React.MouseEvent<HTMLElement>) => {
+    setMoveAnchorEl(e.currentTarget);
+  };
+
+  const handleMoveToList = (listId: string) => {
+    onMove(task, listId);
+    handleCloseMenu();
+  };
+
+  const handleDelete = () => {
+    onDelete(task);
+    handleCloseMenu();
+  };
+
+  const handleStarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStar(task);
+  };
+
+  // Other lists (excluding current)
+  const otherLists = taskLists.filter(list => list.id !== task.listId);
 
   return (
     <ListItem
       disablePadding
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       secondaryAction={
-        <IconButton
-          edge="end"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(task);
-          }}
-          size="small"
-          sx={{
-            opacity: 0,
-            transition: "opacity 0.2s",
-            ".MuiListItem-root:hover &": { opacity: 0.7 },
-            "&:hover": { opacity: 1 },
-          }}
-        >
-          <Delete fontSize="small" />
-        </IconButton>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {/* Star Button - visible if starred OR on hover */}
+          <IconButton
+            edge="end"
+            onClick={handleStarClick}
+            size="small"
+            sx={{
+              opacity: task.isStarred ? 1 : isHovered ? 0.7 : 0,
+              transition: "opacity 0.2s",
+              color: task.isStarred ? "warning.main" : "inherit",
+            }}
+          >
+            {task.isStarred ? <Star fontSize="small" /> : <StarBorder fontSize="small" />}
+          </IconButton>
+
+          {/* Options Menu Button - visible on hover */}
+          <IconButton
+            edge="end"
+            onClick={handleMenuClick}
+            size="small"
+            sx={{
+              opacity: isHovered ? 0.7 : 0,
+              transition: "opacity 0.2s",
+              "&:hover": { opacity: 1 },
+            }}
+          >
+            <MoreVert fontSize="small" />
+          </IconButton>
+        </Box>
       }
-      sx={{
-        "&:hover .MuiIconButton-root": { opacity: 0.7 },
-      }}
     >
       <ListItemButton
         onClick={() => onToggle(task)}
         dense
-        sx={{ py: 0.75, px: 2, alignItems: "flex-start" }}
+        sx={{ py: 0.75, px: 2, pr: 10, alignItems: "flex-start" }}
       >
         <ListItemIcon sx={{ minWidth: 32, mt: 0.5 }}>
           <Checkbox
-            checked={task.completed}
+            checked={task.status === "completed"}
             icon={<RadioButtonUnchecked sx={{ fontSize: 20 }} />}
             checkedIcon={<CheckCircle sx={{ fontSize: 20 }} color="primary" />}
             sx={{ p: 0 }}
@@ -102,19 +167,19 @@ export default function TaskListItem({
         </ListItemIcon>
         <Box sx={{ overflow: "hidden", flex: 1 }}>
           <ListItemText
-            primary={task.name}
+            primary={task.title}
             primaryTypographyProps={{
               variant: "body2",
               sx: {
-                textDecoration: task.completed ? "line-through" : "none",
-                opacity: task.completed ? 0.6 : 1,
+                textDecoration: task.status === "completed" ? "line-through" : "none",
+                opacity: task.status === "completed" ? 0.6 : 1,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
               },
             }}
           />
-          {task.description && !task.completed && (
+          {task.notes && task.status !== "completed" && (
             <Typography
               variant="caption"
               color="text.secondary"
@@ -125,11 +190,11 @@ export default function TaskListItem({
                 whiteSpace: "nowrap",
               }}
             >
-              {task.description}
+              {task.notes}
             </Typography>
           )}
           {/* Due Date Chip */}
-          {dueDateInfo && !task.completed && (
+          {dueDateInfo && task.status !== "completed" && (
             <Chip
               icon={<Event sx={{ fontSize: 14 }} />}
               label={dueDateInfo.label}
@@ -148,6 +213,59 @@ export default function TaskListItem({
           )}
         </Box>
       </ListItemButton>
+
+      {/* Options Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <MenuItem onClick={handleMoveClick}>
+          <MenuItemIcon>
+            <DriveFileMove fontSize="small" />
+          </MenuItemIcon>
+          <ListItemText>Move to list</ListItemText>
+          <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+            ▶
+          </Typography>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleDelete}>
+          <MenuItemIcon>
+            <Delete fontSize="small" />
+          </MenuItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
+
+      {/* Move To List Submenu */}
+      <Menu
+        anchorEl={moveAnchorEl}
+        open={Boolean(moveAnchorEl)}
+        onClose={() => setMoveAnchorEl(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+      >
+        {otherLists.length === 0 ? (
+          <MenuItem disabled>
+            <ListItemText>No other lists</ListItemText>
+          </MenuItem>
+        ) : (
+          otherLists.map((list) => (
+            <MenuItem 
+              key={list.id} 
+              onClick={() => handleMoveToList(list.id)}
+            >
+              <MenuItemIcon sx={{ minWidth: 32 }}>
+                {task.listId === list.id && <Check fontSize="small" />}
+              </MenuItemIcon>
+              <ListItemText>{list.title}</ListItemText>
+            </MenuItem>
+          ))
+        )}
+      </Menu>
     </ListItem>
   );
 }

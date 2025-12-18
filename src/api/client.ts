@@ -5,7 +5,7 @@
  * Wraps axios with auth token injection.
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
+import axios, { AxiosInstance, AxiosError } from "axios";
 import { GOOGLE_TASKS_API } from "./endpoints";
 
 /**

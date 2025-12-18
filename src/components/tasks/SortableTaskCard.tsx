@@ -1,19 +1,23 @@
+/**
+ * Sortable Task Card Wrapper
+ * 
+ * Makes TaskListCard draggable using @dnd-kit/sortable.
+ */
+
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Box } from "@mui/material";
-import { taskCategory } from "../../types/taskapi";
+import { AppTaskList } from "../../types/app";
 import TaskListCard from "./TaskListCard";
 
 interface SortableTaskCardProps {
-  category: taskCategory;
+  taskList: AppTaskList;
   isActive: boolean;
-  categoryIndex: number;
 }
 
 export default function SortableTaskCard({
-  category,
+  taskList,
   isActive,
-  categoryIndex,
 }: SortableTaskCardProps) {
   const {
     attributes,
@@ -22,31 +26,37 @@ export default function SortableTaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: category.id });
+  } = useSortable({ id: taskList.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? "grabbing" : "grab",
   };
 
   return (
     <Box
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       sx={{
         scrollSnapAlign: "start",
+        cursor: isDragging ? "grabbing" : "grab",
         touchAction: "none",
       }}
     >
-      <TaskListCard
-        category={category}
-        isActive={isActive}
-        categoryIndex={categoryIndex}
-      />
+      {/* Drag handle is the whole card, but we use a wrapper to not interfere with clicks */}
+      <Box
+        {...attributes}
+        {...listeners}
+        sx={{ 
+          cursor: isDragging ? "grabbing" : "grab",
+        }}
+      >
+        <TaskListCard
+          taskList={taskList}
+          isActive={isActive}
+        />
+      </Box>
     </Box>
   );
 }

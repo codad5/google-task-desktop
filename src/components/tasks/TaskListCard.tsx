@@ -1,4 +1,10 @@
-import { useState, useEffect } from "react";
+/**
+ * Task List Card
+ * 
+ * Displays a single task list as a sticky-note style card.
+ */
+
+import { useState } from "react";
 import {
   Paper,
   List,
@@ -7,161 +13,54 @@ import {
   Collapse,
   Typography,
   Box,
-  CircularProgress,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import {
-  taskObjectSelector,
-  activeTaskCategorySelector,
-  activeCategoryTasksState,
-  messageState,
-  taskCategoriesListSelector,
-} from "../../config/states";
-import { task, taskCategory } from "../../types/taskapi";
+import { AppTaskList, AppTask } from "../../types/app";
+import { useTasks } from "../../hooks";
 import TaskListHeader from "./TaskListHeader";
 import TaskListItem from "./TaskListItem";
 import AddTaskInput from "./AddTaskInput";
 
 interface TaskListCardProps {
-  category: taskCategory;
+  taskList: AppTaskList;
   isActive: boolean;
-  categoryIndex: number;
+  isDragOverlay?: boolean;
 }
 
-export default function TaskListCard({ category, isActive, categoryIndex }: TaskListCardProps) {
+export default function TaskListCard({ 
+  taskList, 
+  isActive, 
+  isDragOverlay = false 
+}: TaskListCardProps) {
   const [showCompleted, setShowCompleted] = useState(false);
-  const [categoryTasks, setCategoryTasks] = useState<task[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
+  const { createTask, toggleTaskComplete, toggleTaskStar, deleteTask, moveTaskToList } = useTasks();
 
-  const taskObject = useRecoilValue(taskObjectSelector);
-  const activeTaskCategory = useRecoilValue(activeTaskCategorySelector);
-  const setActiveCategoryTasks = useSetRecoilState(activeCategoryTasksState);
-  const setToastMessage = useSetRecoilState(messageState);
-  const taskCategories = useRecoilValue(taskCategoriesListSelector);
-
-  // Fetch tasks on mount if not already loaded
-  useEffect(() => {
-    const fetchTasks = async () => {
-      if (hasFetched) return;
-      if (category.tasks && category.tasks.length > 0) {
-        setCategoryTasks(category.tasks);
-        setHasFetched(true);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const tasks = await taskObject.getTasksByCategoryPosition(categoryIndex);
-        setCategoryTasks(tasks);
-        setHasFetched(true);
-      } catch (error) {
-        console.error("Error fetching tasks for category:", category.name, error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (taskObject && categoryIndex >= 0) {
-      fetchTasks();
-    }
-  }, [taskObject, categoryIndex, category.tasks, hasFetched, category.name]);
-
-  // Update tasks when category.tasks changes
-  useEffect(() => {
-    if (category.tasks && category.tasks.length > 0) {
-      setCategoryTasks(category.tasks);
-    }
-  }, [category.tasks]);
-
-  const incompleteTasks = categoryTasks.filter((task) => !task.completed);
-  const completedTasks = categoryTasks.filter((task) => task.completed);
-
-  const handleTaskToggle = async (task: task) => {
-    const updatedTask = { ...task, completed: !task.completed };
-
-    try {
-      const result = await taskObject.markTask(updatedTask, category.id);
-      if (!result) throw new Error("Task not updated");
-
-      setToastMessage({
-        title: updatedTask.completed ? "Task completed" : "Task unchecked",
-        type: updatedTask.completed ? "success" : "info",
-      });
-
-      setCategoryTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? updatedTask : t))
-      );
-
-      if (isActive) {
-        setActiveCategoryTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? updatedTask : t))
-        );
-      }
-
-      taskObject.clearPositionCache(activeTaskCategory);
-    } catch (error) {
-      setToastMessage({
-        title: "Error",
-        body: (error as Error).message,
-        type: "error",
-      });
-    }
-  };
-
-  const handleTaskDelete = async (task: task) => {
-    try {
-      const result = await taskObject.deleteTask(task, category.id);
-      if (!result) throw new Error("Task not deleted");
-
-      setCategoryTasks((prev) => prev.filter((t) => t.id !== task.id));
-
-      if (isActive) {
-        setActiveCategoryTasks((prev) => prev.filter((t) => t.id !== task.id));
-      }
-
-      taskObject.clearPositionCache(activeTaskCategory);
-      setToastMessage({
-        title: "Task deleted",
-        type: "warning",
-      });
-    } catch (error) {
-      setToastMessage({
-        title: "Error",
-        body: (error as Error).message,
-        type: "error",
-      });
-    }
-  };
+  // Separate incomplete and completed tasks
+  const incompleteTasks = taskList.tasks.filter((task) => task.status === "needsAction");
+  const completedTasks = taskList.tasks.filter((task) => task.status === "completed");
 
   const handleAddTask = async (title: string, dueDate?: Date) => {
-    const newTask: task = {
-      id: (categoryTasks?.length ?? 0) + 1,
-      name: title,
-      description: "",
-      dueDate: dueDate || new Date(),
-      completed: false,
-    };
+    await createTask({
+      title,
+      due: dueDate,
+      listId: taskList.id,
+    });
+  };
 
-    try {
-      const result = await taskObject.addToTask(newTask, category.id);
-      if (!result) throw new Error("Task not added");
+  const handleTaskToggle = async (task: AppTask) => {
+    await toggleTaskComplete(taskList.id, task.id);
+  };
 
-      setCategoryTasks((prev) => [newTask, ...prev]);
+  const handleTaskStar = async (task: AppTask) => {
+    await toggleTaskStar(taskList.id, task.id);
+  };
 
-      if (isActive) {
-        setActiveCategoryTasks((prev) => [newTask, ...prev]);
-      }
+  const handleTaskDelete = async (task: AppTask) => {
+    await deleteTask(taskList.id, task.id);
+  };
 
-      taskObject.clearPositionCache(activeTaskCategory);
-    } catch (error) {
-      setToastMessage({
-        title: "Error",
-        body: (error as Error).message,
-        type: "error",
-      });
-    }
+  const handleTaskMove = async (task: AppTask, toListId: string) => {
+    await moveTaskToList(taskList.id, task.id, toListId);
   };
 
   return (
@@ -171,7 +70,7 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
         width: 280,
         minWidth: 280,
         minHeight: 200,
-        maxHeight: "calc(100vh - 150px)",
+        maxHeight: isDragOverlay ? "none" : "calc(100vh - 150px)",
         flexShrink: 0,
         bgcolor: "background.paper",
         borderRadius: 2,
@@ -181,22 +80,25 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
         flexDirection: "column",
         transition: "border-color 0.2s",
         overflow: "hidden",
+        pointerEvents: isDragOverlay ? "none" : "auto",
       }}
     >
       {/* Header */}
-      <TaskListHeader title={category.name} />
+      <TaskListHeader 
+        title={taskList.title} 
+        listId={taskList.id}
+      />
 
       {/* Add Task */}
       <AddTaskInput onAdd={handleAddTask} />
 
-      {/* Task List - with auto-hide scrollbar */}
+      {/* Task List */}
       <List
         sx={{
           py: 0,
           flex: 1,
           overflowY: "auto",
           overflowX: "hidden",
-          // Auto-hide scrollbar - only visible on hover
           scrollbarWidth: "thin",
           scrollbarColor: "transparent transparent",
           "&:hover": {
@@ -217,13 +119,7 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
           },
         }}
       >
-        {loading && (
-          <Box sx={{ py: 4, textAlign: "center" }}>
-            <CircularProgress size={24} />
-          </Box>
-        )}
-
-        {!loading && incompleteTasks.length === 0 && completedTasks.length === 0 && (
+        {incompleteTasks.length === 0 && completedTasks.length === 0 && (
           <Box sx={{ py: 4, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
               No tasks
@@ -236,7 +132,9 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
             key={`incomplete-${task.id}`}
             task={task}
             onToggle={handleTaskToggle}
+            onStar={handleTaskStar}
             onDelete={handleTaskDelete}
+            onMove={handleTaskMove}
           />
         ))}
 
@@ -266,7 +164,9 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
                   key={`completed-${task.id}`}
                   task={task}
                   onToggle={handleTaskToggle}
+                  onStar={handleTaskStar}
                   onDelete={handleTaskDelete}
+                  onMove={handleTaskMove}
                 />
               ))}
             </Collapse>

@@ -1,3 +1,9 @@
+/**
+ * Add Category Dialog
+ * 
+ * Dialog for creating a new task list.
+ */
+
 import { useState } from "react";
 import {
   Dialog,
@@ -8,11 +14,7 @@ import {
   Button,
   Box,
 } from "@mui/material";
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import {
-  taskObjectSelector,
-  taskCategoriesListState,
-} from "../../config/states";
+import { useTaskLists } from "../../hooks";
 
 interface AddCategoryDialogProps {
   open: boolean;
@@ -25,28 +27,18 @@ export default function AddCategoryDialog({
 }: AddCategoryDialogProps) {
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const taskObject = useRecoilValue(taskObjectSelector);
-  const setTaskCategories = useSetRecoilState(taskCategoriesListState);
+  const { createTaskList } = useTaskLists();
 
   const handleAdd = async () => {
     if (!categoryName.trim()) return;
 
     setLoading(true);
     try {
-      const result = await taskObject.addNewTaskCategory(categoryName.trim());
-      if (!result) {
-        console.log("category not added");
-        return;
-      }
-
-      const updatedCategories = await taskObject.getTaskCategories();
-      setTaskCategories(updatedCategories);
-
+      await createTaskList(categoryName.trim());
       setCategoryName("");
       onClose();
     } catch (error) {
-      console.error("Error adding category:", error);
+      console.error("Error adding list:", error);
     } finally {
       setLoading(false);
     }
@@ -57,8 +49,8 @@ export default function AddCategoryDialog({
     onClose();
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter") {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" && !loading && categoryName.trim()) {
       handleAdd();
     }
   };
@@ -84,7 +76,7 @@ export default function AddCategoryDialog({
             variant="outlined"
             value={categoryName}
             onChange={(e) => setCategoryName(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             disabled={loading}
           />
         </Box>

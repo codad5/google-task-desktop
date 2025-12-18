@@ -6,6 +6,6 @@ export * from "./google-tasks";
 // App-specific types
 export * from "./app";
 
-// Legacy types (for backwards compatibility during migration)
-export * from "./taskapi";
-export * from "./googleapis";
+// Legacy types are kept for backwards compatibility
+// Import them directly from "./taskapi" or "./googleapis" if needed
+
