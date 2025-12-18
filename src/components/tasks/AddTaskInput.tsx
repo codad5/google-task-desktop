@@ -1,14 +1,30 @@
 import { useState, useRef } from "react";
-import { Box, Button, TextField, InputAdornment, IconButton } from "@mui/material";
-import { EditOutlined, Add } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  TextField,
+  IconButton,
+  Chip,
+  Popover,
+} from "@mui/material";
+import {
+  EditOutlined,
+  Add,
+  Today,
+  CalendarMonth,
+  AccessTime,
+} from "@mui/icons-material";
 
 interface AddTaskInputProps {
-  onAdd: (title: string) => void;
+  onAdd: (title: string, dueDate?: Date) => void;
 }
 
 export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
+  const [taskDetails, setTaskDetails] = useState("");
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleExpand = () => {
@@ -18,38 +34,65 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
 
   const handleAdd = () => {
     if (taskTitle.trim()) {
-      onAdd(taskTitle.trim());
+      onAdd(taskTitle.trim(), dueDate || undefined);
       setTaskTitle("");
+      setTaskDetails("");
+      setDueDate(null);
+      setIsExpanded(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleAdd();
     } else if (e.key === "Escape") {
       setIsExpanded(false);
       setTaskTitle("");
+      setTaskDetails("");
+      setDueDate(null);
     }
   };
 
-  const handleBlur = () => {
-    if (!taskTitle.trim()) {
-      setIsExpanded(false);
+  const handleSetToday = () => {
+    const today = new Date();
+    today.setHours(23, 59, 0, 0);
+    setDueDate(today);
+  };
+
+  const handleSetTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 0, 0);
+    setDueDate(tomorrow);
+  };
+
+  const formatDueDate = (date: Date) => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return `Today${date.getHours() !== 23 ? `, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}`;
     }
+    if (date.toDateString() === tomorrow.toDateString()) {
+      return `Tomorrow${date.getHours() !== 23 ? `, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}`;
+    }
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
   if (!isExpanded) {
     return (
-      <Box sx={{ px: 2, py: 1 }}>
+      <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}>
         <Button
           startIcon={<EditOutlined sx={{ fontSize: 18 }} />}
           onClick={handleExpand}
           sx={{
             textTransform: "none",
-            color: "text.secondary",
+            color: "primary.main",
             justifyContent: "flex-start",
+            fontWeight: 500,
             "&:hover": {
-              color: "primary.main",
               bgcolor: "transparent",
             },
           }}
@@ -63,32 +106,158 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
 
   return (
     <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+      {/* Title Input */}
       <TextField
         fullWidth
         size="small"
-        placeholder="Add a task"
+        placeholder="Title"
         value={taskTitle}
         onChange={(e) => setTaskTitle(e.target.value)}
         onKeyDown={handleKeyPress}
-        onBlur={handleBlur}
         inputRef={inputRef}
         variant="standard"
         InputProps={{
           disableUnderline: true,
-          endAdornment: taskTitle.trim() && (
-            <InputAdornment position="end">
-              <IconButton onClick={handleAdd} size="small" color="primary">
-                <Add fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          ),
         }}
         sx={{
           "& .MuiInputBase-input": {
             py: 0.5,
+            fontSize: "0.95rem",
           },
         }}
       />
+
+      {/* Details Input */}
+      <TextField
+        fullWidth
+        size="small"
+        placeholder="Details"
+        value={taskDetails}
+        onChange={(e) => setTaskDetails(e.target.value)}
+        onKeyDown={handleKeyPress}
+        variant="standard"
+        multiline
+        maxRows={3}
+        InputProps={{
+          disableUnderline: true,
+          startAdornment: (
+            <Box sx={{ mr: 1, color: "text.secondary", display: "flex", alignItems: "center" }}>
+              ≡
+            </Box>
+          ),
+        }}
+        sx={{
+          mt: 1,
+          "& .MuiInputBase-input": {
+            py: 0.5,
+            fontSize: "0.85rem",
+          },
+        }}
+      />
+
+      {/* Date/Time Buttons */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1.5, flexWrap: "wrap" }}>
+        <Chip
+          label="Today"
+          size="small"
+          onClick={handleSetToday}
+          variant={dueDate?.toDateString() === new Date().toDateString() ? "filled" : "outlined"}
+          color={dueDate?.toDateString() === new Date().toDateString() ? "primary" : "default"}
+          sx={{ borderRadius: 2 }}
+        />
+        <Chip
+          label="Tomorrow"
+          size="small"
+          onClick={handleSetTomorrow}
+          variant={
+            dueDate?.toDateString() ===
+            new Date(Date.now() + 86400000).toDateString()
+              ? "filled"
+              : "outlined"
+          }
+          color={
+            dueDate?.toDateString() ===
+            new Date(Date.now() + 86400000).toDateString()
+              ? "primary"
+              : "default"
+          }
+          sx={{ borderRadius: 2 }}
+        />
+        <IconButton
+          size="small"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{ border: 1, borderColor: "divider" }}
+        >
+          <CalendarMonth fontSize="small" />
+        </IconButton>
+        <IconButton
+          size="small"
+          sx={{ border: 1, borderColor: "divider" }}
+        >
+          <AccessTime fontSize="small" />
+        </IconButton>
+
+        {/* Show selected date */}
+        {dueDate && (
+          <Chip
+            icon={<Today sx={{ fontSize: 16 }} />}
+            label={formatDueDate(dueDate)}
+            size="small"
+            onDelete={() => setDueDate(null)}
+            color="primary"
+            variant="outlined"
+            sx={{ ml: "auto" }}
+          />
+        )}
+      </Box>
+
+      {/* Action Buttons */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1.5, gap: 1 }}>
+        <Button
+          size="small"
+          onClick={() => {
+            setIsExpanded(false);
+            setTaskTitle("");
+            setTaskDetails("");
+            setDueDate(null);
+          }}
+          sx={{ textTransform: "none" }}
+        >
+          Cancel
+        </Button>
+        <Button
+          size="small"
+          variant="contained"
+          disabled={!taskTitle.trim()}
+          onClick={handleAdd}
+          sx={{ textTransform: "none" }}
+        >
+          Save
+        </Button>
+      </Box>
+
+      {/* Calendar Popover (placeholder - would need date picker library) */}
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        <Box sx={{ p: 2, minWidth: 200 }}>
+          <TextField
+            type="date"
+            fullWidth
+            size="small"
+            onChange={(e) => {
+              if (e.target.value) {
+                setDueDate(new Date(e.target.value));
+                setAnchorEl(null);
+              }
+            }}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Box>
+      </Popover>
     </Box>
   );
 }

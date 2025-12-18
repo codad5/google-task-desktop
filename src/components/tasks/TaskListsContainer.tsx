@@ -66,24 +66,16 @@ export default function TaskListsContainer() {
           overflowY: "hidden",
           flexWrap: "nowrap",
           py: 2,
-          px: 6,
+          pl: 4, // Added left padding for spacing from sidebar
+          pr: 6,
           height: "100%",
           alignItems: "flex-start",
           scrollSnapType: "x mandatory",
           scrollBehavior: "smooth",
-          // Custom scrollbar styling
+          // Hide scrollbar
+          scrollbarWidth: "none",
           "&::-webkit-scrollbar": {
-            height: 8,
-          },
-          "&::-webkit-scrollbar-track": {
-            bgcolor: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            bgcolor: "action.disabled",
-            borderRadius: 4,
-            "&:hover": {
-              bgcolor: "action.active",
-            },
+            display: "none",
           },
         }}
       >
@@ -97,6 +89,7 @@ export default function TaskListsContainer() {
             <TaskListCard
               category={category}
               isActive={activeTaskCategory === index}
+              categoryIndex={index}
             />
           </Box>
         ))}

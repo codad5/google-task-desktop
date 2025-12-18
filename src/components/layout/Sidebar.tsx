@@ -12,11 +12,11 @@ import {
 } from "@mui/material";
 import {
   Add,
-  CheckBoxOutlineBlank,
+  TaskAlt,
   StarBorder,
   ExpandLess,
   ExpandMore,
-  CheckBox,
+  FormatListBulleted,
 } from "@mui/icons-material";
 import { useRecoilState, useRecoilValue } from "recoil";
 import {
@@ -101,7 +101,7 @@ export default function Sidebar({ onCategorySelect }: SidebarProps) {
             }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>
-              <CheckBoxOutlineBlank fontSize="small" />
+              <TaskAlt fontSize="small" />
             </ListItemIcon>
             <ListItemText
               primary="All tasks"
@@ -147,14 +147,23 @@ export default function Sidebar({ onCategorySelect }: SidebarProps) {
           )}
         </ListItemButton>
 
-        {/* Task Categories List */}
+        {/* Task Categories List - with max-height */}
         <Collapse in={listsExpanded} timeout="auto">
           <List
             sx={{
               py: 0,
-              flex: 1,
+              maxHeight: 300,
               overflowY: "auto",
               overflowX: "hidden",
+              // Subtle scrollbar
+              scrollbarWidth: "thin",
+              "&::-webkit-scrollbar": {
+                width: 4,
+              },
+              "&::-webkit-scrollbar-thumb": {
+                bgcolor: "action.disabled",
+                borderRadius: 2,
+              },
             }}
           >
             {taskCategories.map((category, index) => (
@@ -175,7 +184,7 @@ export default function Sidebar({ onCategorySelect }: SidebarProps) {
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 40 }}>
-                  <CheckBox fontSize="small" color="primary" />
+                  <FormatListBulleted fontSize="small" color="primary" />
                 </ListItemIcon>
                 <ListItemText
                   primary={category.name}

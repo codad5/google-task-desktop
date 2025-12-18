@@ -7,6 +7,7 @@ import {
   Collapse,
   Typography,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useRecoilValue, useSetRecoilState } from "recoil";
@@ -15,6 +16,7 @@ import {
   activeTaskCategorySelector,
   activeCategoryTasksState,
   messageState,
+  taskCategoriesListSelector,
 } from "../../config/states";
 import { task, taskCategory } from "../../types/taskapi";
 import TaskListHeader from "./TaskListHeader";
@@ -24,19 +26,51 @@ import AddTaskInput from "./AddTaskInput";
 interface TaskListCardProps {
   category: taskCategory;
   isActive: boolean;
+  categoryIndex: number;
 }
 
-export default function TaskListCard({ category, isActive }: TaskListCardProps) {
+export default function TaskListCard({ category, isActive, categoryIndex }: TaskListCardProps) {
   const [showCompleted, setShowCompleted] = useState(false);
   const [categoryTasks, setCategoryTasks] = useState<task[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const taskObject = useRecoilValue(taskObjectSelector);
   const activeTaskCategory = useRecoilValue(activeTaskCategorySelector);
   const setActiveCategoryTasks = useSetRecoilState(activeCategoryTasksState);
   const setToastMessage = useSetRecoilState(messageState);
+  const taskCategories = useRecoilValue(taskCategoriesListSelector);
 
+  // Fetch tasks on mount if not already loaded
   useEffect(() => {
-    if (category.tasks) {
+    const fetchTasks = async () => {
+      if (hasFetched) return;
+      if (category.tasks && category.tasks.length > 0) {
+        setCategoryTasks(category.tasks);
+        setHasFetched(true);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const tasks = await taskObject.getTasksByCategoryPosition(categoryIndex);
+        setCategoryTasks(tasks);
+        setHasFetched(true);
+      } catch (error) {
+        console.error("Error fetching tasks for category:", category.name, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (taskObject && categoryIndex >= 0) {
+      fetchTasks();
+    }
+  }, [taskObject, categoryIndex, category.tasks, hasFetched, category.name]);
+
+  // Update tasks when category.tasks changes
+  useEffect(() => {
+    if (category.tasks && category.tasks.length > 0) {
       setCategoryTasks(category.tasks);
     }
   }, [category.tasks]);
@@ -101,12 +135,12 @@ export default function TaskListCard({ category, isActive }: TaskListCardProps) 
     }
   };
 
-  const handleAddTask = async (title: string) => {
+  const handleAddTask = async (title: string, dueDate?: Date) => {
     const newTask: task = {
       id: (categoryTasks?.length ?? 0) + 1,
       name: title,
       description: "",
-      dueDate: new Date(),
+      dueDate: dueDate || new Date(),
       completed: false,
     };
 
@@ -136,8 +170,7 @@ export default function TaskListCard({ category, isActive }: TaskListCardProps) 
       sx={{
         width: 280,
         minWidth: 280,
-        minHeight: 400,
-        maxHeight: "calc(100vh - 180px)",
+        minHeight: 200,
         flexShrink: 0,
         bgcolor: "background.paper",
         borderRadius: 2,
@@ -145,7 +178,6 @@ export default function TaskListCard({ category, isActive }: TaskListCardProps) 
         borderColor: isActive ? "primary.main" : "divider",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden",
         transition: "border-color 0.2s",
       }}
     >
@@ -156,15 +188,14 @@ export default function TaskListCard({ category, isActive }: TaskListCardProps) 
       <AddTaskInput onAdd={handleAddTask} />
 
       {/* Task List */}
-      <List
-        sx={{
-          flex: 1,
-          overflowY: "auto",
-          overflowX: "hidden",
-          py: 0,
-        }}
-      >
-        {incompleteTasks.length === 0 && completedTasks.length === 0 && (
+      <List sx={{ py: 0 }}>
+        {loading && (
+          <Box sx={{ py: 4, textAlign: "center" }}>
+            <CircularProgress size={24} />
+          </Box>
+        )}
+
+        {!loading && incompleteTasks.length === 0 && completedTasks.length === 0 && (
           <Box sx={{ py: 4, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">
               No tasks
