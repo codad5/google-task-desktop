@@ -56,7 +56,6 @@ export default function TaskListsContainer() {
         <ChevronLeft />
       </IconButton>
 
-      {/* Scrollable container */}
       <Box
         ref={containerRef}
         sx={{
@@ -66,7 +65,7 @@ export default function TaskListsContainer() {
           overflowY: "hidden",
           flexWrap: "nowrap",
           py: 2,
-          pl: 4, // Added left padding for spacing from sidebar
+          pl: 6, // Increased left padding for more spacing from sidebar
           pr: 6,
           height: "100%",
           alignItems: "flex-start",

@@ -171,6 +171,7 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
         width: 280,
         minWidth: 280,
         minHeight: 200,
+        maxHeight: "calc(100vh - 150px)",
         flexShrink: 0,
         bgcolor: "background.paper",
         borderRadius: 2,
@@ -179,6 +180,7 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
         display: "flex",
         flexDirection: "column",
         transition: "border-color 0.2s",
+        overflow: "hidden",
       }}
     >
       {/* Header */}
@@ -187,8 +189,34 @@ export default function TaskListCard({ category, isActive, categoryIndex }: Task
       {/* Add Task */}
       <AddTaskInput onAdd={handleAddTask} />
 
-      {/* Task List */}
-      <List sx={{ py: 0 }}>
+      {/* Task List - with auto-hide scrollbar */}
+      <List
+        sx={{
+          py: 0,
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          // Auto-hide scrollbar - only visible on hover
+          scrollbarWidth: "thin",
+          scrollbarColor: "transparent transparent",
+          "&:hover": {
+            scrollbarColor: "rgba(155, 155, 155, 0.5) transparent",
+          },
+          "&::-webkit-scrollbar": {
+            width: 6,
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "transparent",
+            borderRadius: 3,
+          },
+          "&:hover::-webkit-scrollbar-thumb": {
+            background: "rgba(155, 155, 155, 0.5)",
+          },
+        }}
+      >
         {loading && (
           <Box sx={{ py: 4, textAlign: "center" }}>
             <CircularProgress size={24} />
