@@ -371,6 +371,20 @@ export function useTasks() {
     }
   }, [service, updateTaskInState, setToast]);
 
+  /**
+   * Reorder tasks locally (optimistic, no API call as Google Tasks API doesn't support batch reorder)
+   */
+  const reorderTasksLocally = useCallback((listId: string, reorderedTasks: AppTask[]) => {
+    setTaskLists(prev => prev.map(list => {
+      if (list.id !== listId) return list;
+      return {
+        ...list,
+        tasks: reorderedTasks,
+        incompleteCount: reorderedTasks.filter(t => t.status === "needsAction").length,
+      };
+    }));
+  }, [setTaskLists]);
+
   return {
     // Data helpers
     getStarredTasks,
@@ -386,5 +400,6 @@ export function useTasks() {
     clearCompletedTasks,
     indentTask,
     unindentTask,
+    reorderTasksLocally,
   };
 }

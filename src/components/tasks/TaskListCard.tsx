@@ -2,6 +2,7 @@
  * Task List Card
  * 
  * Displays a single task list as a sticky-note style card.
+ * Supports drag-drop reordering of tasks.
  */
 
 import { useState } from "react";
@@ -15,9 +16,25 @@ import {
   Box,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { AppTaskList, AppTask } from "../../types/app";
 import { useTasks } from "../../hooks";
 import TaskListHeader from "./TaskListHeader";
+import SortableTaskItem from "./SortableTaskItem";
 import TaskListItem from "./TaskListItem";
 import AddTaskInput from "./AddTaskInput";
 
@@ -44,7 +61,18 @@ export default function TaskListCard({
     moveTaskToList,
     indentTask,
     unindentTask,
+    reorderTasksLocally,
   } = useTasks();
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Organize tasks so subtasks appear immediately after their parent
   const organizeWithSubtasks = (tasks: AppTask[]): AppTask[] => {
@@ -176,6 +204,45 @@ export default function TaskListCard({
     await unindentTask(taskList.id, task.id);
   };
 
+  // Handle drag end for task reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = incompleteTasks.findIndex(t => t.id === active.id);
+    const newIndex = incompleteTasks.findIndex(t => t.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      // Get the dragged task and its subtasks
+      const draggedTask = incompleteTasks[oldIndex];
+      const draggedSubtasks = incompleteTasks.filter(t => t.parent === draggedTask.id);
+      
+      // If dragging a parent task, move it with its children
+      if (draggedSubtasks.length > 0) {
+        // Remove the task and its subtasks
+        const withoutDragged = incompleteTasks.filter(
+          t => t.id !== draggedTask.id && t.parent !== draggedTask.id
+        );
+        // Insert at new position
+        const adjustedNewIndex = withoutDragged.findIndex(t => t.id === over.id);
+        const newOrder = [...withoutDragged];
+        newOrder.splice(adjustedNewIndex !== -1 ? adjustedNewIndex : newOrder.length, 0, draggedTask, ...draggedSubtasks);
+        
+        // Combine with completed tasks
+        const allTasks = [...newOrder, ...completedTasks];
+        reorderTasksLocally(taskList.id, allTasks);
+      } else {
+        // Simple reorder for single task
+        const newOrder = arrayMove(incompleteTasks, oldIndex, newIndex);
+        const allTasks = [...newOrder, ...completedTasks];
+        reorderTasksLocally(taskList.id, allTasks);
+      }
+    }
+  };
+
   return (
     <Paper
       elevation={0}
@@ -242,21 +309,33 @@ export default function TaskListCard({
           </Box>
         )}
 
-        {incompleteTasks.map((task) => (
-          <TaskListItem
-            key={`incomplete-${task.id}`}
-            task={task}
-            onToggle={handleTaskToggle}
-            onStar={handleTaskStar}
-            onDelete={handleTaskDelete}
-            onMove={handleTaskMove}
-            onUpdate={handleTaskUpdate}
-            onAddSubtask={handleAddSubtask}
-            onIndent={handleIndentTask}
-            onUnindent={handleUnindentTask}
-            parentTaskTitle={task.parent ? taskTitleMap.get(task.parent) : undefined}
-          />
-        ))}
+        {/* Draggable incomplete tasks */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={incompleteTasks.map(t => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {incompleteTasks.map((task) => (
+              <SortableTaskItem
+                key={`incomplete-${task.id}`}
+                task={task}
+                onToggle={handleTaskToggle}
+                onStar={handleTaskStar}
+                onDelete={handleTaskDelete}
+                onMove={handleTaskMove}
+                onUpdate={handleTaskUpdate}
+                onAddSubtask={handleAddSubtask}
+                onIndent={handleIndentTask}
+                onUnindent={handleUnindentTask}
+                parentTaskTitle={task.parent ? taskTitleMap.get(task.parent) : undefined}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
 
         {/* Completed Section */}
         {completedTasks.length > 0 && (
