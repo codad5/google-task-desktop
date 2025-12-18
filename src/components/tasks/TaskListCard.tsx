@@ -33,6 +33,7 @@ export default function TaskListCard({
   isDragOverlay = false 
 }: TaskListCardProps) {
   const [showCompleted, setShowCompleted] = useState(false);
+  const [sortBy, setSortBy] = useState<string>("my_order");
   const { 
     createTask, 
     createSubtask,
@@ -44,12 +45,49 @@ export default function TaskListCard({
     unindentTask,
   } = useTasks();
 
-  // Separate incomplete and completed tasks
-  const incompleteTasks = taskList.tasks.filter((task) => task.status === "needsAction");
+  // Sort function for tasks
+  const sortTasks = (tasks: AppTask[], sortType: string): AppTask[] => {
+    const sorted = [...tasks];
+    switch (sortType) {
+      case "date":
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.updated || 0).getTime();
+          const dateB = new Date(b.updated || 0).getTime();
+          return dateB - dateA; // Newest first
+        });
+      case "deadline":
+        return sorted.sort((a, b) => {
+          if (!a.due && !b.due) return 0;
+          if (!a.due) return 1;
+          if (!b.due) return -1;
+          return new Date(a.due).getTime() - new Date(b.due).getTime();
+        });
+      case "starred":
+        return sorted.sort((a, b) => {
+          if (a.isStarred === b.isStarred) return 0;
+          return a.isStarred ? -1 : 1;
+        });
+      case "title":
+        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+      case "my_order":
+      default:
+        return sorted; // Keep original order
+    }
+  };
+
+  // Separate and sort tasks
+  const incompleteTasks = sortTasks(
+    taskList.tasks.filter((task) => task.status === "needsAction"),
+    sortBy
+  );
   const completedTasks = taskList.tasks.filter((task) => task.status === "completed");
 
   // Create a map of task IDs to titles for parent lookup
   const taskTitleMap = new Map(taskList.tasks.map(t => [t.id, t.title]));
+
+  const handleSortChange = (newSort: string) => {
+    setSortBy(newSort);
+  };
 
   const handleAddTask = async (title: string, dueDate?: Date) => {
     await createTask({
@@ -111,6 +149,8 @@ export default function TaskListCard({
       <TaskListHeader 
         title={taskList.title} 
         listId={taskList.id}
+        currentSort={sortBy}
+        onSortChange={handleSortChange}
       />
 
       {/* Add Task */}

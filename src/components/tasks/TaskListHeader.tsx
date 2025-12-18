@@ -36,14 +36,20 @@ import { useTaskLists, useTasks } from "../../hooks";
 interface TaskListHeaderProps {
   title: string;
   listId: string;
+  currentSort?: string;
+  onSortChange?: (sortBy: string) => void;
 }
 
-export default function TaskListHeader({ title, listId }: TaskListHeaderProps) {
+export default function TaskListHeader({ 
+  title, 
+  listId, 
+  currentSort = "my_order",
+  onSortChange 
+}: TaskListHeaderProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
-  const [currentSort, setCurrentSort] = useState("my_order");
 
   const { renameTaskList, deleteTaskList } = useTaskLists();
   const { clearCompletedTasks } = useTasks();
@@ -66,8 +72,7 @@ export default function TaskListHeader({ title, listId }: TaskListHeaderProps) {
   };
 
   const handleSortSelect = (sortBy: string) => {
-    setCurrentSort(sortBy);
-    // TODO: Implement sorting
+    onSortChange?.(sortBy);
     handleClose();
   };
 
