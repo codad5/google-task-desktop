@@ -2,6 +2,7 @@
  * Task List Item
  * 
  * Individual task row with checkbox, star, and options menu.
+ * Supports subtasks with indentation.
  */
 
 import { useState } from "react";
@@ -19,6 +20,13 @@ import {
   MenuItem,
   ListItemIcon as MenuItemIcon,
   Divider,
+  Tooltip,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import {
   RadioButtonUnchecked,
@@ -30,8 +38,12 @@ import {
   DriveFileMove,
   Event,
   Check,
+  SubdirectoryArrowRight,
+  FormatIndentDecrease,
+  FormatIndentIncrease,
+  AddTask,
 } from "@mui/icons-material";
-import { AppTask, AppTaskList } from "../../types/app";
+import { AppTask } from "../../types/app";
 import { useRecoilValue } from "recoil";
 import { taskListsAtom } from "../../store";
 
@@ -41,6 +53,10 @@ interface TaskListItemProps {
   onStar: (task: AppTask) => void;
   onDelete: (task: AppTask) => void;
   onMove: (task: AppTask, toListId: string) => void;
+  onAddSubtask?: (task: AppTask, title: string) => void;
+  onIndent?: (task: AppTask) => void;
+  onUnindent?: (task: AppTask) => void;
+  parentTaskTitle?: string; // For showing tooltip on subtasks
 }
 
 // Helper to format due date
@@ -74,13 +90,20 @@ export default function TaskListItem({
   onStar,
   onDelete,
   onMove,
+  onAddSubtask,
+  onIndent,
+  onUnindent,
+  parentTaskTitle,
 }: TaskListItemProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [moveAnchorEl, setMoveAnchorEl] = useState<null | HTMLElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [showSubtaskDialog, setShowSubtaskDialog] = useState(false);
+  const [subtaskTitle, setSubtaskTitle] = useState("");
   
   const taskLists = useRecoilValue(taskListsAtom);
   const dueDateInfo = formatDueDate(task.due);
+  const isSubtask = !!task.parent;
 
   const handleMenuClick = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -111,10 +134,33 @@ export default function TaskListItem({
     onStar(task);
   };
 
+  const handleAddSubtask = () => {
+    setShowSubtaskDialog(true);
+    handleCloseMenu();
+  };
+
+  const handleSubtaskSubmit = () => {
+    if (subtaskTitle.trim() && onAddSubtask) {
+      onAddSubtask(task, subtaskTitle.trim());
+      setSubtaskTitle("");
+      setShowSubtaskDialog(false);
+    }
+  };
+
+  const handleIndent = () => {
+    onIndent?.(task);
+    handleCloseMenu();
+  };
+
+  const handleUnindent = () => {
+    onUnindent?.(task);
+    handleCloseMenu();
+  };
+
   // Other lists (excluding current)
   const otherLists = taskLists.filter(list => list.id !== task.listId);
 
-  return (
+  const taskContent = (
     <ListItem
       disablePadding
       onMouseEnter={() => setIsHovered(true)}
@@ -154,8 +200,25 @@ export default function TaskListItem({
       <ListItemButton
         onClick={() => onToggle(task)}
         dense
-        sx={{ py: 0.75, px: 2, pr: 10, alignItems: "flex-start" }}
+        sx={{ 
+          py: 0.75, 
+          pl: isSubtask ? 5 : 2, // Indent subtasks
+          pr: 10, 
+          alignItems: "flex-start" 
+        }}
       >
+        {/* Subtask indicator */}
+        {isSubtask && (
+          <SubdirectoryArrowRight 
+            fontSize="small" 
+            sx={{ 
+              mr: 0.5, 
+              mt: 0.5, 
+              color: "text.disabled",
+              fontSize: 16,
+            }} 
+          />
+        )}
         <ListItemIcon sx={{ minWidth: 32, mt: 0.5 }}>
           <Checkbox
             checked={task.status === "completed"}
@@ -222,6 +285,36 @@ export default function TaskListItem({
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
+        {/* Add Subtask (only for non-subtasks) */}
+        {!isSubtask && onAddSubtask && (
+          <MenuItem onClick={handleAddSubtask}>
+            <MenuItemIcon>
+              <AddTask fontSize="small" />
+            </MenuItemIcon>
+            <ListItemText>Add subtask</ListItemText>
+          </MenuItem>
+        )}
+        
+        {/* Indent (only for non-subtasks) */}
+        {!isSubtask && onIndent && (
+          <MenuItem onClick={handleIndent}>
+            <MenuItemIcon>
+              <FormatIndentIncrease fontSize="small" />
+            </MenuItemIcon>
+            <ListItemText>Indent</ListItemText>
+          </MenuItem>
+        )}
+        
+        {/* Unindent (only for subtasks) */}
+        {isSubtask && onUnindent && (
+          <MenuItem onClick={handleUnindent}>
+            <MenuItemIcon>
+              <FormatIndentDecrease fontSize="small" />
+            </MenuItemIcon>
+            <ListItemText>Unindent</ListItemText>
+          </MenuItem>
+        )}
+        
         <MenuItem onClick={handleMoveClick}>
           <MenuItemIcon>
             <DriveFileMove fontSize="small" />
@@ -266,6 +359,50 @@ export default function TaskListItem({
           ))
         )}
       </Menu>
+
+      {/* Add Subtask Dialog */}
+      <Dialog 
+        open={showSubtaskDialog} 
+        onClose={() => setShowSubtaskDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add subtask to "{task.title}"</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Subtask title"
+            fullWidth
+            variant="outlined"
+            value={subtaskTitle}
+            onChange={(e) => setSubtaskTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSubtaskSubmit();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowSubtaskDialog(false)}>Cancel</Button>
+          <Button onClick={handleSubtaskSubmit} variant="contained" disabled={!subtaskTitle.trim()}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ListItem>
   );
+
+  // Wrap with tooltip if it's a subtask
+  if (isSubtask && parentTaskTitle) {
+    return (
+      <Tooltip title={`Subtask of: ${parentTaskTitle}`} placement="left">
+        {taskContent}
+      </Tooltip>
+    );
+  }
+
+  return taskContent;
 }

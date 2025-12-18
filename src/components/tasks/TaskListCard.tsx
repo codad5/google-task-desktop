@@ -33,11 +33,23 @@ export default function TaskListCard({
   isDragOverlay = false 
 }: TaskListCardProps) {
   const [showCompleted, setShowCompleted] = useState(false);
-  const { createTask, toggleTaskComplete, toggleTaskStar, deleteTask, moveTaskToList } = useTasks();
+  const { 
+    createTask, 
+    createSubtask,
+    toggleTaskComplete, 
+    toggleTaskStar, 
+    deleteTask, 
+    moveTaskToList,
+    indentTask,
+    unindentTask,
+  } = useTasks();
 
   // Separate incomplete and completed tasks
   const incompleteTasks = taskList.tasks.filter((task) => task.status === "needsAction");
   const completedTasks = taskList.tasks.filter((task) => task.status === "completed");
+
+  // Create a map of task IDs to titles for parent lookup
+  const taskTitleMap = new Map(taskList.tasks.map(t => [t.id, t.title]));
 
   const handleAddTask = async (title: string, dueDate?: Date) => {
     await createTask({
@@ -61,6 +73,18 @@ export default function TaskListCard({
 
   const handleTaskMove = async (task: AppTask, toListId: string) => {
     await moveTaskToList(taskList.id, task.id, toListId);
+  };
+
+  const handleAddSubtask = async (task: AppTask, title: string) => {
+    await createSubtask(taskList.id, task.id, title);
+  };
+
+  const handleIndentTask = async (task: AppTask) => {
+    await indentTask(taskList.id, task.id);
+  };
+
+  const handleUnindentTask = async (task: AppTask) => {
+    await unindentTask(taskList.id, task.id);
   };
 
   return (
@@ -135,6 +159,10 @@ export default function TaskListCard({
             onStar={handleTaskStar}
             onDelete={handleTaskDelete}
             onMove={handleTaskMove}
+            onAddSubtask={handleAddSubtask}
+            onIndent={handleIndentTask}
+            onUnindent={handleUnindentTask}
+            parentTaskTitle={task.parent ? taskTitleMap.get(task.parent) : undefined}
           />
         ))}
 
@@ -167,6 +195,8 @@ export default function TaskListCard({
                   onStar={handleTaskStar}
                   onDelete={handleTaskDelete}
                   onMove={handleTaskMove}
+                  onUnindent={handleUnindentTask}
+                  parentTaskTitle={task.parent ? taskTitleMap.get(task.parent) : undefined}
                 />
               ))}
             </Collapse>

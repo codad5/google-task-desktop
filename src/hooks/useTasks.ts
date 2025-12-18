@@ -240,16 +240,121 @@ export function useTasks() {
     );
   }, [taskLists, starredIds]);
 
+  /**
+   * Create a subtask under a parent task
+   */
+  const createSubtask = useCallback(async (
+    listId: string, 
+    parentTaskId: string, 
+    title: string
+  ): Promise<AppTask | null> => {
+    if (!service) return null;
+
+    try {
+      const input: CreateTaskInput = {
+        listId,
+        title,
+        parentId: parentTaskId,
+      };
+      const newTask = await service.createTask(input);
+      
+      // Add to local state after the parent
+      setTaskLists(prev => prev.map(list => {
+        if (list.id !== listId) return list;
+        
+        // Find parent task index and insert after it
+        const parentIndex = list.tasks.findIndex(t => t.id === parentTaskId);
+        const tasks = [...list.tasks];
+        if (parentIndex !== -1) {
+          tasks.splice(parentIndex + 1, 0, newTask);
+        } else {
+          tasks.unshift(newTask);
+        }
+        
+        return {
+          ...list,
+          tasks,
+          incompleteCount: tasks.filter(t => t.status === "needsAction").length,
+        };
+      }));
+
+      setToast({ title: "Subtask created", type: "success" });
+      return newTask;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create subtask";
+      setToast({ title: "Error", body: message, type: "error" });
+      return null;
+    }
+  }, [service, setTaskLists, setToast]);
+
+  /**
+   * Unindent a subtask (remove its parent, making it a top-level task)
+   */
+  const unindentTask = useCallback(async (listId: string, taskId: string): Promise<boolean> => {
+    if (!service) return false;
+
+    try {
+      // Move task with no parent (makes it top-level)
+      await service.reorderTask(listId, taskId, undefined, undefined);
+      
+      // Update local state
+      updateTaskInState(listId, taskId, task => ({ ...task, parent: undefined }));
+
+      setToast({ title: "Task unindented", type: "info" });
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to unindent task";
+      setToast({ title: "Error", body: message, type: "error" });
+      return false;
+    }
+  }, [service, updateTaskInState, setToast]);
+
+  /**
+   * Indent a task (make it a subtask of the previous task)
+   */
+  const indentTask = useCallback(async (listId: string, taskId: string): Promise<boolean> => {
+    if (!service) return false;
+
+    // Find the task and the previous task
+    const list = taskLists.find(l => l.id === listId);
+    if (!list) return false;
+
+    const taskIndex = list.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex <= 0) {
+      setToast({ title: "Cannot indent", body: "No task above to indent under", type: "warning" });
+      return false;
+    }
+
+    const previousTask = list.tasks[taskIndex - 1];
+
+    try {
+      await service.reorderTask(listId, taskId, undefined, previousTask.id);
+      
+      // Update local state
+      updateTaskInState(listId, taskId, task => ({ ...task, parent: previousTask.id }));
+
+      setToast({ title: "Task indented", type: "info" });
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to indent task";
+      setToast({ title: "Error", body: message, type: "error" });
+      return false;
+    }
+  }, [service, taskLists, updateTaskInState, setToast]);
+
   return {
     // Data helpers
     getStarredTasks,
 
     // Actions
     createTask,
+    createSubtask,
     toggleTaskComplete,
     toggleTaskStar,
     deleteTask,
     moveTaskToList,
     clearCompletedTasks,
+    indentTask,
+    unindentTask,
   };
 }
