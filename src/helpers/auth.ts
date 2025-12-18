@@ -253,14 +253,22 @@ export async function handleLoadFrom(accessTokenBody: AccessToken) {
   
 export async function handleLogout() {
     setRecoil(authLoadingState, true)
+    // Clear old auth atoms
     setRecoil(accessTokenState, null);
-    // setAccessToken(null);
     setRecoil(userProfileState, null);
-    // setProfile(null);
-    // setActiveTaskCategory(-1)
     setRecoil(activeTaskCategoryState, -1)
-    // setActiveCategoryTasksState([])
     setRecoil(activeCategoryTasksState, [])
+    
+    // Clear new store atoms (import from store)
+    try {
+      const { accessTokenAtom, taskListsAtom, starredTaskIdsAtom } = await import("../store");
+      setRecoil(accessTokenAtom, null);
+      setRecoil(taskListsAtom, []);
+      setRecoil(starredTaskIdsAtom, new Set());
+    } catch (e) {
+      console.log("Could not clear new store atoms", e);
+    }
+    
     await deleteAccessToken();
     setRecoil(authLoadingState, false)
   }
