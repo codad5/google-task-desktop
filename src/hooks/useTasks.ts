@@ -342,6 +342,35 @@ export function useTasks() {
     }
   }, [service, taskLists, updateTaskInState, setToast]);
 
+  /**
+   * Update a task's title and/or notes
+   */
+  const updateTask = useCallback(async (
+    listId: string, 
+    taskId: string, 
+    title: string, 
+    notes?: string
+  ): Promise<boolean> => {
+    if (!service) return false;
+
+    // Optimistic update
+    updateTaskInState(listId, taskId, task => ({ 
+      ...task, 
+      title,
+      notes: notes ?? task.notes,
+    }));
+
+    try {
+      await service.updateTask({ listId, id: taskId, title, notes });
+      return true;
+    } catch (err) {
+      // Revert would need original values - for simplicity, just show error
+      const message = err instanceof Error ? err.message : "Failed to update task";
+      setToast({ title: "Error", body: message, type: "error" });
+      return false;
+    }
+  }, [service, updateTaskInState, setToast]);
+
   return {
     // Data helpers
     getStarredTasks,
@@ -349,6 +378,7 @@ export function useTasks() {
     // Actions
     createTask,
     createSubtask,
+    updateTask,
     toggleTaskComplete,
     toggleTaskStar,
     deleteTask,

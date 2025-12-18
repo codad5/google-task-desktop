@@ -37,6 +37,7 @@ export default function TaskListCard({
   const { 
     createTask, 
     createSubtask,
+    updateTask,
     toggleTaskComplete, 
     toggleTaskStar, 
     deleteTask, 
@@ -45,34 +46,79 @@ export default function TaskListCard({
     unindentTask,
   } = useTasks();
 
-  // Sort function for tasks
+  // Organize tasks so subtasks appear immediately after their parent
+  const organizeWithSubtasks = (tasks: AppTask[]): AppTask[] => {
+    const topLevel = tasks.filter(t => !t.parent);
+    const subtasks = tasks.filter(t => t.parent);
+    const subtaskMap = new Map<string, AppTask[]>();
+    
+    // Group subtasks by parent
+    for (const st of subtasks) {
+      if (st.parent) {
+        const existing = subtaskMap.get(st.parent) || [];
+        existing.push(st);
+        subtaskMap.set(st.parent, existing);
+      }
+    }
+    
+    // Insert subtasks after each parent
+    const result: AppTask[] = [];
+    for (const task of topLevel) {
+      result.push(task);
+      const children = subtaskMap.get(task.id) || [];
+      result.push(...children);
+    }
+    
+    // Add orphan subtasks (parent not in current view) at the end
+    for (const st of subtasks) {
+      if (st.parent && !topLevel.find(t => t.id === st.parent)) {
+        result.push(st);
+      }
+    }
+    
+    return result;
+  };
+
+  // Sort function for tasks (applies to top-level, subtasks follow parents)
   const sortTasks = (tasks: AppTask[], sortType: string): AppTask[] => {
-    const sorted = [...tasks];
+    // First separate top-level and subtasks
+    const topLevel = tasks.filter(t => !t.parent);
+    const subtasks = tasks.filter(t => t.parent);
+    
+    // Sort only top-level tasks
+    let sortedTopLevel: AppTask[];
     switch (sortType) {
       case "date":
-        return sorted.sort((a, b) => {
+        sortedTopLevel = [...topLevel].sort((a, b) => {
           const dateA = new Date(a.updated || 0).getTime();
           const dateB = new Date(b.updated || 0).getTime();
           return dateB - dateA; // Newest first
         });
+        break;
       case "deadline":
-        return sorted.sort((a, b) => {
+        sortedTopLevel = [...topLevel].sort((a, b) => {
           if (!a.due && !b.due) return 0;
           if (!a.due) return 1;
           if (!b.due) return -1;
           return new Date(a.due).getTime() - new Date(b.due).getTime();
         });
+        break;
       case "starred":
-        return sorted.sort((a, b) => {
+        sortedTopLevel = [...topLevel].sort((a, b) => {
           if (a.isStarred === b.isStarred) return 0;
           return a.isStarred ? -1 : 1;
         });
+        break;
       case "title":
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+        sortedTopLevel = [...topLevel].sort((a, b) => a.title.localeCompare(b.title));
+        break;
       case "my_order":
       default:
-        return sorted; // Keep original order
+        sortedTopLevel = [...topLevel];
     }
+    
+    // Now organize with subtasks following parents
+    return organizeWithSubtasks([...sortedTopLevel, ...subtasks]);
   };
 
   // Separate and sort tasks
@@ -111,6 +157,10 @@ export default function TaskListCard({
 
   const handleTaskMove = async (task: AppTask, toListId: string) => {
     await moveTaskToList(taskList.id, task.id, toListId);
+  };
+
+  const handleTaskUpdate = async (task: AppTask, title: string, notes?: string) => {
+    await updateTask(taskList.id, task.id, title, notes);
   };
 
   const handleAddSubtask = async (task: AppTask, title: string) => {
@@ -199,6 +249,7 @@ export default function TaskListCard({
             onStar={handleTaskStar}
             onDelete={handleTaskDelete}
             onMove={handleTaskMove}
+            onUpdate={handleTaskUpdate}
             onAddSubtask={handleAddSubtask}
             onIndent={handleIndentTask}
             onUnindent={handleUnindentTask}

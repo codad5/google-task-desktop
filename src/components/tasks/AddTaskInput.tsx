@@ -25,6 +25,7 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
   const [taskDetails, setTaskDetails] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [timeAnchorEl, setTimeAnchorEl] = useState<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleExpand = () => {
@@ -192,6 +193,7 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
         </IconButton>
         <IconButton
           size="small"
+          onClick={(e) => setTimeAnchorEl(e.currentTarget)}
           sx={{ border: 1, borderColor: "divider" }}
         >
           <AccessTime fontSize="small" />
@@ -252,6 +254,33 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
               if (e.target.value) {
                 setDueDate(new Date(e.target.value));
                 setAnchorEl(null);
+              }
+            }}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Box>
+      </Popover>
+
+      {/* Time Picker Popover */}
+      <Popover
+        open={Boolean(timeAnchorEl)}
+        anchorEl={timeAnchorEl}
+        onClose={() => setTimeAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        <Box sx={{ p: 2, minWidth: 150 }}>
+          <TextField
+            type="time"
+            fullWidth
+            size="small"
+            label="Set time"
+            onChange={(e) => {
+              if (e.target.value) {
+                const [hours, minutes] = e.target.value.split(":").map(Number);
+                const newDate = dueDate ? new Date(dueDate) : new Date();
+                newDate.setHours(hours, minutes, 0, 0);
+                setDueDate(newDate);
+                setTimeAnchorEl(null);
               }
             }}
             InputLabelProps={{ shrink: true }}
