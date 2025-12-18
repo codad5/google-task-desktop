@@ -159,8 +159,9 @@ export default function TaskListCard({
     await moveTaskToList(taskList.id, task.id, toListId);
   };
 
-  const handleTaskUpdate = async (task: AppTask, title: string, notes?: string) => {
+  const handleTaskUpdate = async (task: AppTask, title: string, notes?: string, due?: Date) => {
     await updateTask(taskList.id, task.id, title, notes);
+    // Note: due date handling would need updateTask to be extended
   };
 
   const handleAddSubtask = async (task: AppTask, title: string) => {

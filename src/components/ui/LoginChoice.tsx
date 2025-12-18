@@ -91,8 +91,8 @@ export default function LoginChoice({ onContinueAsUser, onSignInAnother }: Login
         >
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar
-              src={cachedUser.picture}
-              alt={cachedUser.name}
+              src={cachedUser.picture ?? undefined}
+              alt={cachedUser.name ?? undefined}
               sx={{ width: 48, height: 48 }}
             />
             <Box flex={1} minWidth={0}>
