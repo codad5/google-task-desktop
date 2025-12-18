@@ -1,21 +1,46 @@
+import { useState } from "react";
 import {
   Box,
-  Button,
-  useTheme,
   AppBar,
   Toolbar,
-  Typography,
   IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from "@mui/material";
-import { Brightness4, Brightness7 } from "@mui/icons-material";
+import { Logout } from "@mui/icons-material";
 import { useRecoilValue, useSetRecoilState } from "recoil";
-import { attemptLoginState, loggedInSelector } from "../../config/states";
-import LoggedInHeader from "./LoggedInHeader";
+import {
+  attemptLogoutState,
+  loggedInSelector,
+  userProfileSelector,
+} from "../../config/states";
 
 export default function Header() {
   const loggedIn = useRecoilValue(loggedInSelector);
-  const setAttemptLogin = useSetRecoilState(attemptLoginState);
-  const theme = useTheme();
+  const profile = useRecoilValue(userProfileSelector);
+  const setAttemptLogout = useSetRecoilState(attemptLogoutState);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    setAttemptLogout(true);
+    handleMenuClose();
+  };
+
+  if (!loggedIn || !profile) {
+    return null;
+  }
 
   return (
     <AppBar
@@ -25,26 +50,63 @@ export default function Header() {
         bgcolor: "transparent",
         borderBottom: 1,
         borderColor: "divider",
-        mb: 2,
       }}
     >
-      <Toolbar sx={{ justifyContent: "space-between" }}>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 500 }}>
-          Google Tasks Desktop
-        </Typography>
-
+      <Toolbar
+        sx={{
+          justifyContent: "flex-end",
+          minHeight: "48px !important",
+          py: 0.5,
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {loggedIn ? (
-            <LoggedInHeader />
-          ) : (
-            <Button
-              variant="contained"
-              onClick={() => setAttemptLogin(true)}
-              sx={{ textTransform: "none" }}
+          <IconButton onClick={handleMenuOpen} size="small">
+            <Avatar
+              sx={{ width: 28, height: 28 }}
+              src={profile?.picture ?? ""}
+              alt={profile?.name ?? "User"}
             >
-              Sign in with Google
-            </Button>
-          )}
+              {profile?.name?.charAt(0) ?? "U"}
+            </Avatar>
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            onClick={handleMenuClose}
+            PaperProps={{
+              elevation: 3,
+              sx: {
+                overflow: "visible",
+                filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                mt: 1.5,
+                minWidth: 200,
+              },
+            }}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          >
+            <MenuItem disabled>
+              <Avatar
+                src={profile?.picture ?? ""}
+                sx={{ width: 32, height: 32, mr: 1.5 }}
+              />
+              <ListItemText
+                primary={profile?.name}
+                secondary={profile?.email}
+                primaryTypographyProps={{ variant: "body2" }}
+                secondaryTypographyProps={{ variant: "caption" }}
+              />
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon>
+                <Logout fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Sign out" />
+            </MenuItem>
+          </Menu>
         </Box>
       </Toolbar>
     </AppBar>

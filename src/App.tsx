@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
   Typography,
   Snackbar,
   Alert,
@@ -29,6 +28,7 @@ import {
   messageState,
 } from "./config/states";
 import Header from "./components/ui/Header";
+import { Sidebar, DisclaimerBanner } from "./components/layout";
 import { listen_for_auth_code } from "./helpers/eventlistner";
 import { SettingsStore } from "./helpers/DBStores";
 import settings from "./config/settings";
@@ -140,58 +140,84 @@ function App() {
   });
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-      <Container maxWidth="xl">
-        <Header />
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "hidden",
+        bgcolor: "background.default",
+      }}
+    >
+      {/* Disclaimer Banner */}
+      <DisclaimerBanner />
 
-        {loggedIn ? (
-          <TaskPage />
-        ) : (
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            minHeight="60vh"
-            textAlign="center"
-          >
-            {loading ? (
-              <CircularProgress size={60} />
-            ) : (
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => setAttemptedLogin(true)}
-                sx={{ textTransform: "none", py: 1.5, px: 4 }}
-              >
-                Sign in with Google
-              </Button>
-            )}
-          </Box>
-        )}
+      {/* Main Layout */}
+      <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* Sidebar - only show when logged in */}
+        {loggedIn && <Sidebar />}
 
-        {/* Footer */}
+        {/* Main Content Area */}
         <Box
-          component="footer"
-          textAlign="center"
-          mt={4}
-          py={3}
-          sx={{ borderTop: 1, borderColor: "divider" }}
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
         >
-          <Typography variant="body2" color="text.secondary">
-            <a
-              href="https://codad5.me"
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: "inherit", textDecoration: "none" }}
+          {/* Header */}
+          <Header />
+
+          {/* Content */}
+          {loggedIn ? (
+            <TaskPage />
+          ) : (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              textAlign="center"
             >
-              codad5
-            </a>
-            {" © "}
-            {new Date().getFullYear()}
-          </Typography>
+              {loading ? (
+                <CircularProgress size={60} />
+              ) : (
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => setAttemptedLogin(true)}
+                  sx={{ textTransform: "none", py: 1.5, px: 4 }}
+                >
+                  Sign in with Google
+                </Button>
+              )}
+            </Box>
+          )}
+
+          {/* Footer */}
+          <Box
+            component="footer"
+            textAlign="center"
+            py={1.5}
+            sx={{ borderTop: 1, borderColor: "divider" }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              <a
+                href="https://codad5.me"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
+                codad5
+              </a>
+              {" © "}
+              {new Date().getFullYear()}
+            </Typography>
+          </Box>
         </Box>
-      </Container>
+      </Box>
 
       {/* Toast Messages */}
       <Snackbar
@@ -222,6 +248,5 @@ function App() {
     </Box>
   );
 }
-
 
 export default App;

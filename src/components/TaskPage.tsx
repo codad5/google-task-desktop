@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Box,
-  Container,
-  Grid,
-  CircularProgress,
-  Tabs,
-  Tab,
-} from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 import { taskCategory, task } from "../types/taskapi";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import {
@@ -18,8 +11,7 @@ import {
   isOnlineSelector,
   taskObjectSelector,
 } from "../config/states";
-import TaskColumn from "./ui/TaskColumn";
-import AddTaskFab from "./ui/AddTaskFab";
+import { TaskListsContainer } from "./tasks";
 
 export default function TaskPage() {
   const taskObject = useRecoilValue(taskObjectSelector);
@@ -30,14 +22,14 @@ export default function TaskPage() {
   const [taskCategoryList, setTaskCategoryList] = useRecoilState<
     taskCategory[]
   >(taskCategoriesListState);
-  const [activeTaskCategory, setActiveTaskCategory] = useRecoilState<number>(
+  const [activeTaskCategory] = useRecoilState<number>(
     activeTaskCategoryState
   );
   const setActiveCategoryTasks = useSetRecoilState<task[]>(
     activeCategoryTasksState
   );
   const [loading, setLoading] = useState(true);
-  const [toastMessage, setToastMessage] = useRecoilState(messageState);
+  const [, setToastMessage] = useRecoilState(messageState);
   const isOnline = useRecoilValue(isOnlineSelector);
 
   // This effect runs when taskObject changes (which happens when accessToken changes)
@@ -121,17 +113,13 @@ export default function TaskPage() {
       });
   }, [activeTaskCategory, isOnline, taskCategoryList.length]); // Added taskCategoryList.length as dependency
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTaskCategory(newValue);
-  };
-
   if (loading || taskCategoryList?.length <= 0) {
     return (
       <Box
         display="flex"
         justifyContent="center"
         alignItems="center"
-        height="80vh"
+        flex={1}
       >
         <CircularProgress size={60} />
       </Box>
@@ -139,36 +127,15 @@ export default function TaskPage() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 2 }}>
-      {/* Header with navigation tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
-        <Tabs
-          value={activeTaskCategory >= 0 ? activeTaskCategory : 0}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-        >
-          {taskCategoryList.map((category, index) => (
-            <Tab key={index} label={category.name} />
-          ))}
-        </Tabs>
-      </Box>
-
-      {/* Task columns in grid layout */}
-      <Grid container spacing={3}>
-        {taskCategoryList.map((category, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={index}>
-            <TaskColumn
-              category={category}
-              isActive={activeTaskCategory === index}
-            />
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Floating action button */}
-      {taskCategoryList.length > 0 && activeTaskCategory >= 0 && <AddTaskFab />}
-    </Container>
+    <Box
+      sx={{
+        flex: 1,
+        overflow: "hidden",
+        display: "flex",
+        bgcolor: "background.default",
+      }}
+    >
+      <TaskListsContainer />
+    </Box>
   );
 }
