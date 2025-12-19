@@ -56,7 +56,7 @@ function App() {
 
   useEffect(() => {
     if (attemptedLogin) {
-      handleLogin();
+      handleLogin(false);
       setAttemptedLogin(false);
     }
   }, [attemptedLogin]);
@@ -178,7 +178,7 @@ function App() {
           ) : (
             <LoginChoice
               onContinueAsUser={() => setAttemptedLogin(true)}
-              onSignInAnother={() => setAttemptedLogin(true)}
+              onSignInAnother={() => handleLogin(true)}
             />
           )}
 

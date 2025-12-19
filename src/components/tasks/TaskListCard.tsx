@@ -19,7 +19,6 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -27,7 +26,6 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
@@ -64,13 +62,10 @@ export default function TaskListCard({
     reorderTasksLocally,
   } = useTasks();
 
-  // Sensors for drag and drop
+  // Sensors for drag and drop (pointer only - keyboard conflicts with text inputs)
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 

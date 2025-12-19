@@ -476,9 +476,13 @@ export default function TaskListItem({
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
+                    transition: "all 0.2s ease",
                     "&:hover": task.status !== "completed" ? {
                       bgcolor: "action.hover",
                       borderRadius: 0.5,
+                      whiteSpace: "normal",
+                      wordBreak: "break-word",
+                      overflow: "visible",
                     } : {},
                   }}
                 >
@@ -495,6 +499,12 @@ export default function TaskListItem({
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                       cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                        overflow: "visible",
+                      },
                     }}
                   >
                     {task.notes}
