@@ -343,13 +343,14 @@ export function useTasks() {
   }, [service, taskLists, updateTaskInState, setToast]);
 
   /**
-   * Update a task's title and/or notes
+   * Update a task's title, notes, and/or due date
    */
   const updateTask = useCallback(async (
     listId: string, 
     taskId: string, 
     title: string, 
-    notes?: string
+    notes?: string,
+    due?: Date
   ): Promise<boolean> => {
     if (!service) return false;
 
@@ -358,10 +359,11 @@ export function useTasks() {
       ...task, 
       title,
       notes: notes ?? task.notes,
+      due: due ? due.toISOString() : task.due,
     }));
 
     try {
-      await service.updateTask({ listId, id: taskId, title, notes });
+      await service.updateTask({ listId, id: taskId, title, notes, due });
       return true;
     } catch (err) {
       // Revert would need original values - for simplicity, just show error
