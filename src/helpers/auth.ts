@@ -182,8 +182,8 @@ export async function deleteAccessToken() {
     try {
         return await removeFile(STORAGE_PATHS.access_token, { dir: DEFAULT_DIRECTORY });
     } catch (error) {
-        console.error("Error deleting access token:", error);
-        throw new Error("Error deleting access token");
+        // File might not exist, that's okay - fail silently
+        console.debug("deleteAccessToken: file may not exist", error);
     }
 }
 
@@ -206,10 +206,32 @@ export async function getUserProfileFromStorage() {
     }
 }
 
+export async function deleteUserProfile() {
+    try {
+        return await removeFile(STORAGE_PATHS.user_profile, { dir: DEFAULT_DIRECTORY });
+    } catch (error) {
+        // File might not exist, that's okay - fail silently
+        console.debug("deleteUserProfile: file may not exist", error);
+    }
+}
 
-export async function handleLogin() {
+
+export async function handleLogin(forceNew: boolean = false) {
     setRecoil(authLoadingState, true)
     try {
+      // If forcing new account, delete stored token first
+      if (forceNew) {
+        try {
+          await deleteAccessToken();
+          await deleteUserProfile();
+        } catch {
+          // Tokens might not exist, that's fine
+        }
+        pushNotification('Choose an account');
+        await openAuthWindow();
+        return;
+      }
+
       const storedAccessToken = await getAccessTokenFromStorage();
       if (storedAccessToken) {
         handleLoadFrom(storedAccessToken);
@@ -252,17 +274,39 @@ export async function handleLoadFrom(accessTokenBody: AccessToken) {
 }
   
 export async function handleLogout() {
-    setRecoil(authLoadingState, true)
-    setRecoil(accessTokenState, null);
-    // setAccessToken(null);
-    setRecoil(userProfileState, null);
-    // setProfile(null);
-    // setActiveTaskCategory(-1)
-    setRecoil(activeTaskCategoryState, -1)
-    // setActiveCategoryTasksState([])
-    setRecoil(activeCategoryTasksState, [])
-    await deleteAccessToken();
-    setRecoil(authLoadingState, false)
+    console.log("handleLogout: starting");
+    setRecoil(authLoadingState, true);
+    
+    try {
+      // Clear old auth atoms
+      setRecoil(accessTokenState, null);
+      setRecoil(userProfileState, null);
+      setRecoil(activeTaskCategoryState, -1);
+      setRecoil(activeCategoryTasksState, []);
+      
+      // Clear new store atoms using static import
+      // Note: Import at top of file for reliability
+      const store = await import("../store");
+      if (store.accessTokenAtom) setRecoil(store.accessTokenAtom, null);
+      if (store.taskListsAtom) setRecoil(store.taskListsAtom, []);
+      if (store.starredTaskIdsAtom) setRecoil(store.starredTaskIdsAtom, new Set());
+      
+      // Delete stored tokens
+      try {
+        await deleteAccessToken();
+        console.log("handleLogout: access token deleted");
+      } catch (e) {
+        console.log("handleLogout: error deleting token (may not exist)", e);
+      }
+      
+      console.log("handleLogout: complete");
+    } catch (e) {
+      console.error("handleLogout: error during logout", e);
+    } finally {
+      // ALWAYS set loading to false
+      setRecoil(authLoadingState, false);
+      console.log("handleLogout: loading set to false");
+    }
   }
 
 

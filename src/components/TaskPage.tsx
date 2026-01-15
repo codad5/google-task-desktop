@@ -1,90 +1,78 @@
-import { useState , useEffect} from "react";
-import { Tabs, TabPanels, Box, Spinner} from '@chakra-ui/react'
-import { taskCategory, task } from "../types/taskapi";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { accessTokenSelector, activeCategoryTasksState, activeTaskCategoryState, taskObjectState, taskCategoriesListState, messageState, isOnlineSelector } from "../config/states";
-import { Task } from "../helpers/task";
-import TaskList from "./ui/TaskList";
-import AddTaskForm from "./ui/AddTaskForm";
-import TaskCategoryList from "./ui/TaskCategoryList";
+/**
+ * Task Page
+ * 
+ * Main page that displays task lists.
+ * Bridges old auth system with new hooks.
+ */
 
-
+import { useEffect } from "react";
+import { Box, CircularProgress, Typography } from "@mui/material";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { accessTokenSelector } from "../config/states";
+import { accessTokenAtom } from "../store";
+import { useTaskLists } from "../hooks";
+import { TaskListsContainer } from "./tasks";
 
 export default function TaskPage() {
-  const [Taskobject, setTaskobject] = useRecoilState(taskObjectState)
-  const access_token = useRecoilValue(accessTokenSelector)
-
-  if (!access_token) return <div>Not logged in</div>
+  // Get access token from OLD auth system
+  const access_token = useRecoilValue(accessTokenSelector);
   
+  // Set access token in NEW store system
+  const setNewAccessToken = useSetRecoilState(accessTokenAtom);
 
-  const [taskCategoryList, setTaskCategoryList] = useRecoilState<taskCategory[]>(taskCategoriesListState)
-  const [activeTaskCategory] = useRecoilState<number>(activeTaskCategoryState)
-  const setActiveCategoryTasks = useSetRecoilState<task[]>(activeCategoryTasksState)
-  const [loading, setloading] = useState(true)
-  const [toastMessage, setToastMessage] = useRecoilState(messageState)
-  const isOnline = useRecoilValue(isOnlineSelector)
-  
+  // Get task lists state from NEW hooks
+  const { taskLists, loading, error, fetchTaskLists } = useTaskLists();
+
+  // Sync access token from old system to new system
   useEffect(() => {
-    console.log('before task object', Taskobject, access_token)
-    const newtaskObject = new Task(access_token)
-    newtaskObject.setErrorHandler((err) => {
-      console.log('error', err)
-      if (toastMessage) return;
-      setToastMessage({title: 'Error', body: err.message, type: 'error'})
-    })
-    setTaskobject(newtaskObject)
-  }, [])
-  
+    if (access_token) {
+      console.log("TaskPage: syncing access token to new store");
+      setNewAccessToken(access_token);
+    }
+  }, [access_token, setNewAccessToken]);
 
+  // Fetch task lists when access token is available
   useEffect(() => {
-    console.log('after task object', Taskobject)
-    Taskobject.getTaskCategories().then((data) => {
-      setTaskCategoryList(data)
-      return data
-    }).then(() => {
-      Taskobject.getTasksByCategoryPosition(activeTaskCategory >= 0 ? activeTaskCategory : 0).then((data) => {
-        setActiveCategoryTasks(data)
-        setloading(false)
-      })
-    })
-  }, [Taskobject])
+    if (access_token) {
+      console.log("TaskPage: fetching task lists");
+      fetchTaskLists();
+    }
+  }, [access_token, fetchTaskLists]);
 
-  useEffect(() => {
-    console.log('a active task or online changed', navigator.onLine)
-    setloading(true)
-    if (activeTaskCategory < 0) return;
-    Taskobject.getTasksByCategoryPosition(activeTaskCategory).then((data) => {
-      setActiveCategoryTasks(data)
-      setloading(false)
-    })
-  }, [activeTaskCategory, isOnline])
+  if (!access_token) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
+        <Typography>Not logged in</Typography>
+      </Box>
+    );
+  }
 
+  if (loading && taskLists.length === 0) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" flex={1}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <div className="">
-        <Tabs variant='soft-rounded' colorScheme='green' h='80%' defaultIndex={activeTaskCategory} >
-          <TaskCategoryList />
-        {
-          loading || taskCategoryList?.length <= 0 ? (
-            <Box p={4} h='90%' display='flex' justifyContent='center' alignItems='center'>
-              <Spinner size='xl' />
-            </Box>) : (
-              <>
-                <TabPanels p={4} h='90%'>
-                  {
-                    taskCategoryList?.map((val, key) => (
-                      <TaskList key={key} taskCategory={val?.tasks ?? []} />
-                    ))
-                  }
-                </TabPanels>
-                <Box >
-                  { taskCategoryList.length > 0 && activeTaskCategory >= 0 &&  <AddTaskForm />}
-                </Box>
-              </>
-            )
-        }
-        </Tabs>
-    </div>
+    <Box
+      sx={{
+        flex: 1,
+        overflow: "hidden",
+        display: "flex",
+        bgcolor: "background.default",
+      }}
+    >
+      <TaskListsContainer />
+    </Box>
   );
 }
-

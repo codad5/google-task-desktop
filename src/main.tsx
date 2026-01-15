@@ -1,21 +1,46 @@
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { ChakraProvider,extendTheme, type ThemeConfig  } from '@chakra-ui/react';
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
 import { RecoilRoot } from "recoil";
-import RecoilNexus from "recoil-nexus"
+import RecoilNexus from "recoil-nexus";
 
+// Create a dark theme that matches Google's design
+const theme = createTheme({
+  palette: {
+    mode: "dark",
+    primary: {
+      main: "#1976d2",
+    },
+    background: {
+      default: "#1a1a1a",
+      paper: "#262626",
+    },
+    text: {
+      primary: "#ffffff",
+      secondary: "#b3b3b3",
+    },
+  },
+  typography: {
+    fontFamily: '"Google Sans", "Roboto", "Arial", sans-serif',
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          fontFamily: '"Google Sans", "Roboto", "Arial", sans-serif',
+        },
+      },
+    },
+  },
+});
 
-// use dark mode by default or based on system preferences
-const config : ThemeConfig = {
-  initialColorMode: "dark",
-  useSystemColorMode: true,
-}
-const theme = extendTheme({ config })
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-    <RecoilRoot>
-      <RecoilNexus />
-      <ChakraProvider theme={theme}>
-          <App />
-      </ChakraProvider>
-    </RecoilRoot>
+  <RecoilRoot>
+    <RecoilNexus />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  </RecoilRoot>
 );

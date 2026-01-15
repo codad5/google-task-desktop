@@ -38,7 +38,7 @@ fn main() {
     }))
     .plugin(tauri_plugin_context_menu::init())
     .plugin(tauri_plugin_store::Builder::default().build())
-    .plugin(tauri_plugin_oauth::init())
+    // .plugin(tauri_plugin_oauth::init())
     .plugin(tauri_plugin_log::Builder::default().targets([
         LogTarget::LogDir,
         LogTarget::Stdout,
