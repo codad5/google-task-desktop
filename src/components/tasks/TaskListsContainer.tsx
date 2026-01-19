@@ -203,7 +203,7 @@ export default function TaskListsContainer() {
               },
             }}
           >
-            {visibleLists.map((list, index) => (
+            {visibleLists.map((list) => (
               <SortableTaskCard
                 key={list.id}
                 taskList={list}

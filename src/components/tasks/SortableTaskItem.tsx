@@ -7,7 +7,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Box, IconButton } from "@mui/material";
+import { Box } from "@mui/material";
 import { DragIndicator } from "@mui/icons-material";
 import { AppTask } from "../../types/app";
 import TaskListItem from "./TaskListItem";

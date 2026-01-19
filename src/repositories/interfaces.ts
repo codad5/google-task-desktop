@@ -14,7 +14,6 @@ import {
   TaskRequestBody,
   TaskListRequestBody,
 } from "../types/google-tasks";
-import { AppTask, AppTaskList } from "../types/app";
 
 // =============================================================================
 // Task List Repository Interface
