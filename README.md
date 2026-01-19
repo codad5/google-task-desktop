@@ -111,7 +111,8 @@ VITE_GOOGLE_CLIENT_SECRET=your_client_secret
 - [x] Desktop notifications
 - [ ] Global keyboard shortcuts
 - [ ] Offline support with sync
-- [ ] Dark mode
+- [x] Dark mode
+- [ ] Theme toggle (light/dark)
 - [ ] Recurring tasks
 
 ## 👨‍💻 Author
