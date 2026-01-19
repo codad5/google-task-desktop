@@ -77,13 +77,18 @@ const formatDueDate = (date: string | undefined) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const isOverdue = dueDate < today && dueDate.toDateString() !== today.toDateString();
+  const hasTime = dueDate.getHours() !== 23 || dueDate.getMinutes() !== 59;
+  const timeStr = dueDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   
   let dateLabel = "";
   if (dueDate.toDateString() === today.toDateString()) {
-    dateLabel = "Today";
+    // Today: show time only (or "Today" if no specific time)
+    dateLabel = hasTime ? timeStr : "Today";
   } else if (dueDate.toDateString() === tomorrow.toDateString()) {
-    dateLabel = "Tomorrow";
+    // Tomorrow: show "Tomorrow" + time
+    dateLabel = hasTime ? `Tomorrow, ${timeStr}` : "Tomorrow";
   } else {
+    // Other dates: just show the date
     dateLabel = dueDate.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 

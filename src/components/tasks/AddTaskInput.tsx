@@ -71,13 +71,18 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
     const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const hasTime = date.getHours() !== 23 || date.getMinutes() !== 59;
+    const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     if (date.toDateString() === today.toDateString()) {
-      return `Today${date.getHours() !== 23 ? `, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}`;
+      // Today: show time only (or "Today" if no specific time)
+      return hasTime ? timeStr : "Today";
     }
     if (date.toDateString() === tomorrow.toDateString()) {
-      return `Tomorrow${date.getHours() !== 23 ? `, ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}`;
+      // Tomorrow: show "Tomorrow" + time
+      return hasTime ? `Tomorrow, ${timeStr}` : "Tomorrow";
     }
+    // Other dates: just show the date
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
