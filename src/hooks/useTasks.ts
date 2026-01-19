@@ -10,6 +10,10 @@ import { taskListsAtom, toastAtom, starredTaskIdsAtom } from "../store";
 import { useServices } from "./useServices";
 import { AppTask, CreateTaskInput } from "../types/app";
 import { GoogleTaskStatus } from "../types/google-tasks";
+import { 
+  scheduleTaskNotification, 
+  cancelTaskNotification 
+} from "../services/notification.service";
 
 export function useTasks() {
   const { tasks: service } = useServices();
@@ -55,6 +59,11 @@ export function useTasks() {
         };
       }));
 
+      // Schedule notification if has due date
+      if (newTask.due) {
+        await scheduleTaskNotification(newTask);
+      }
+
       return newTask;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create task";
@@ -78,6 +87,18 @@ export function useTasks() {
 
     try {
       await service.toggleComplete(listId, taskId);
+      
+      // Handle notifications based on completion status
+      if (newStatus === "completed") {
+        // Task completed → cancel notification
+        await cancelTaskNotification(taskId);
+      } else {
+        // Task uncompleted → reschedule if has due date
+        if (currentTask.due) {
+          await scheduleTaskNotification({ ...currentTask, status: newStatus });
+        }
+      }
+      
       setToast({ 
         title: newStatus === "completed" ? "Task completed" : "Task unchecked", 
         type: newStatus === "completed" ? "success" : "info" 
@@ -148,6 +169,9 @@ export function useTasks() {
         newSet.delete(taskId);
         return newSet;
       });
+
+      // Cancel any scheduled notification
+      await cancelTaskNotification(taskId);
 
       setToast({ title: "Task deleted", type: "warning" });
       return true;
@@ -354,6 +378,9 @@ export function useTasks() {
   ): Promise<boolean> => {
     if (!service) return false;
 
+    // Get current task for notification handling
+    const currentTask = taskLists.find(l => l.id === listId)?.tasks.find(t => t.id === taskId);
+
     // Optimistic update
     updateTaskInState(listId, taskId, task => ({ 
       ...task, 
@@ -364,6 +391,19 @@ export function useTasks() {
 
     try {
       await service.updateTask({ listId, id: taskId, title, notes, due });
+      
+      // Reschedule notification if due date changed
+      if (due !== undefined && currentTask && currentTask.status !== 'completed') {
+        // Cancel existing and schedule with new time
+        const updatedTask: AppTask = { 
+          ...currentTask, 
+          title, 
+          notes: notes ?? currentTask.notes,
+          due: due.toISOString() 
+        };
+        await scheduleTaskNotification(updatedTask);
+      }
+      
       return true;
     } catch (err) {
       // Revert would need original values - for simplicity, just show error
@@ -371,7 +411,7 @@ export function useTasks() {
       setToast({ title: "Error", body: message, type: "error" });
       return false;
     }
-  }, [service, updateTaskInState, setToast]);
+  }, [service, taskLists, updateTaskInState, setToast]);
 
   /**
    * Reorder tasks locally (optimistic, no API call as Google Tasks API doesn't support batch reorder)

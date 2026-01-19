@@ -41,6 +41,14 @@ export async function greet(name: string) {
     return await commands.greet(name);
 }
 
-export async function generate_oauth_port() {
-    return await invoke("plugin:oauth|start");
+export async function generate_oauth_port(): Promise<number> {
+    try {
+        // Use Tauri invoke to call the Rust OAuth plugin v1
+        const port = await invoke<number>('plugin:oauth|start');
+        return port;
+    } catch (error) {
+        console.error('Failed to start OAuth server:', error);
+        // Fallback to fixed port 8789 if plugin fails
+        return 8789;
+    }
 }
