@@ -1,9 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaGithub, FaStar, FaWindows, FaApple, FaLinux } from 'react-icons/fa';
-import { getLatestVersionDataFOrThisPlatform } from '@/libs/helper';
 
-// Fetch GitHub stars at build time (SSR)
+// Fetch GitHub stats at build time (SSR)
 async function getGitHubStats() {
   try {
     const res = await fetch('https://api.github.com/repos/codad5/google-task-desktop', {
@@ -20,10 +19,24 @@ async function getGitHubStats() {
   }
 }
 
+// Fetch latest release version from GitHub
+async function getLatestVersion() {
+  try {
+    const res = await fetch('https://api.github.com/repos/codad5/google-task-desktop/releases/latest', {
+      next: { revalidate: 3600 } // Revalidate every hour
+    });
+    if (!res.ok) return 'latest';
+    const data = await res.json();
+    return data.tag_name || data.name || 'latest';
+  } catch {
+    return 'latest';
+  }
+}
+
 export default async function Hero() {
-  const [platformData, githubStats] = await Promise.all([
-    getLatestVersionDataFOrThisPlatform(),
+  const [githubStats, latestVersion] = await Promise.all([
     getGitHubStats(),
+    getLatestVersion(),
   ]);
 
   return (
@@ -38,6 +51,13 @@ export default async function Hero() {
 
       {/* Content */}
       <div className="relative flex flex-col items-center gap-8 max-w-4xl">
+        {/* Unofficial Notice */}
+        <div className="px-4 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+          <p className="text-xs text-yellow-400 text-center">
+            ⚠️ Unofficial app • Not affiliated with or endorsed by Google
+          </p>
+        </div>
+
         {/* GitHub Badge */}
         <Link 
           href="https://github.com/codad5/google-task-desktop"
@@ -64,38 +84,34 @@ export default async function Hero() {
         </div>
 
         {/* Title */}
-        <div className="flex flex-col items-center gap-4 text-center">
-          <h1 className="text-5xl font-bold gradient-text md:text-6xl">
+        <div className="flex flex-col items-center gap-4 text-center px-4">
+          <h1 className="text-4xl font-bold gradient-text sm:text-5xl md:text-6xl">
             Google Tasks Desktop
           </h1>
-          <p className="text-xl text-[var(--color-text-secondary)] max-w-2xl">
+          <p className="text-lg text-[var(--color-text-secondary)] max-w-2xl sm:text-xl">
             A beautiful, lightweight desktop client for Google Tasks. 
             Built with Tauri, React, and Rust for blazing fast performance.
           </p>
         </div>
 
         {/* Download Buttons */}
-        <div className="flex flex-col items-center gap-4 sm:flex-row">
-          {platformData?.url ? (
-            <Link href={platformData.url} className="btn-primary flex items-center gap-2">
-              Download {platformData.version}
-              {platformData.platform === 'windows' && <FaWindows />}
-              {platformData.platform === 'mac' && <FaApple />}
-              {platformData.platform === 'linux' && <FaLinux />}
-            </Link>
-          ) : (
-            <Link 
-              href="https://github.com/codad5/google-task-desktop/releases"
-              className="btn-primary flex items-center gap-2"
-            >
-              Download Latest
-            </Link>
-          )}
+        <div className="flex flex-col items-center gap-4 w-full sm:flex-row sm:justify-center">
+          <Link 
+            href="https://github.com/codad5/google-task-desktop/releases/latest"
+            className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
+          >
+            Download {latestVersion}
+            <span className="flex items-center gap-1">
+              <FaWindows className="text-sm" />
+              <FaApple className="text-sm" />
+              <FaLinux className="text-sm" />
+            </span>
+          </Link>
           
           <Link 
             href="https://github.com/codad5/google-task-desktop"
             target="_blank"
-            className="btn-secondary flex items-center gap-2"
+            className="btn-secondary flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <FaGithub />
             View on GitHub
@@ -103,8 +119,8 @@ export default async function Hero() {
         </div>
 
         {/* Version badge */}
-        <p className="text-sm text-[var(--color-text-muted)]">
-          v1.0.0 • Available for Windows, macOS, and Linux
+        <p className="text-sm text-[var(--color-text-muted)] text-center">
+          {latestVersion !== 'latest' ? latestVersion : ''} • Available for Windows, macOS, and Linux
         </p>
       </div>
     </section>

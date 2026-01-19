@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { FaGithub, FaTwitter, FaHeart } from 'react-icons/fa';
+import { FaGithub, FaHeart } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -7,8 +8,15 @@ export default function Footer() {
   return (
     <footer className="flex flex-col items-center px-6 py-12 border-t border-[var(--color-border)]">
       <div className="flex flex-col items-center gap-8 max-w-4xl w-full">
+        {/* Unofficial Notice */}
+        <div className="px-4 py-2 rounded-lg bg-[var(--color-bg-card)] border border-[var(--color-border)]">
+          <p className="text-xs text-[var(--color-text-muted)] text-center">
+            This is an unofficial app. Google Tasks™ is a trademark of Google LLC.
+          </p>
+        </div>
+
         {/* Links Row */}
-        <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-[var(--color-text-secondary)]">
+        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[var(--color-text-secondary)] sm:gap-8">
           <Link 
             href="https://github.com/codad5/google-task-desktop"
             target="_blank"
@@ -30,6 +38,18 @@ export default function Footer() {
             className="hover:text-[var(--color-text-primary)] transition-colors"
           >
             GPL-3.0 License
+          </Link>
+          <Link 
+            href="/terms"
+            className="hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            Terms of Service
+          </Link>
+          <Link 
+            href="/privacy"
+            className="hover:text-[var(--color-text-primary)] transition-colors"
+          >
+            Privacy Policy
           </Link>
           <Link 
             href="https://github.com/codad5/google-task-desktop/blob/main/CONTRIBUTING.md"
@@ -67,11 +87,11 @@ export default function Footer() {
             <FaGithub className="text-lg" />
           </Link>
           <Link 
-            href="https://twitter.com/codaborealise"
+            href="https://x.com/codad5_"
             target="_blank"
             className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors"
           >
-            <FaTwitter className="text-lg" />
+            <FaXTwitter className="text-lg" />
           </Link>
         </div>
       </div>
