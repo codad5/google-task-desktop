@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaGithub, FaStar, FaWindows, FaApple, FaLinux } from 'react-icons/fa';
+import { FaGithub, FaStar, FaWindows, FaApple, FaLinux, FaDownload } from 'react-icons/fa';
+import { getLatestVersionDataFOrThisPlatform } from '@/libs/helper';
 
 // Fetch GitHub stats at build time (SSR)
 async function getGitHubStats() {
@@ -19,25 +20,44 @@ async function getGitHubStats() {
   }
 }
 
-// Fetch latest release version from GitHub
-async function getLatestVersion() {
-  try {
-    const res = await fetch('https://api.github.com/repos/codad5/google-task-desktop/releases/latest', {
-      next: { revalidate: 3600 } // Revalidate every hour
-    });
-    if (!res.ok) return 'latest';
-    const data = await res.json();
-    return data.tag_name || data.name || 'latest';
-  } catch {
-    return 'latest';
+// Get platform icon based on OS
+function getPlatformIcon(platform: string | undefined) {
+  switch (platform) {
+    case 'windows':
+      return FaWindows;
+    case 'mac':
+    case 'darwin':
+      return FaApple;
+    case 'linux':
+      return FaLinux;
+    default:
+      return FaDownload;
+  }
+}
+
+// Get platform name for display
+function getPlatformName(platform: string | undefined) {
+  switch (platform) {
+    case 'windows':
+      return 'Windows';
+    case 'mac':
+    case 'darwin':
+      return 'macOS';
+    case 'linux':
+      return 'Linux';
+    default:
+      return '';
   }
 }
 
 export default async function Hero() {
-  const [githubStats, latestVersion] = await Promise.all([
+  const [githubStats, platformData] = await Promise.all([
     getGitHubStats(),
-    getLatestVersion(),
+    getLatestVersionDataFOrThisPlatform(),
   ]);
+
+  const PlatformIcon = getPlatformIcon(platformData?.platform);
+  const platformName = getPlatformName(platformData?.platform);
 
   return (
     <section className="relative flex flex-col items-center justify-center px-6 py-20">
@@ -96,17 +116,23 @@ export default async function Hero() {
 
         {/* Download Buttons */}
         <div className="flex flex-col items-center gap-4 w-full sm:flex-row sm:justify-center">
-          <Link 
-            href="https://github.com/codad5/google-task-desktop/releases/latest"
-            className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
-          >
-            Download {latestVersion}
-            <span className="flex items-center gap-1">
-              <FaWindows className="text-sm" />
-              <FaApple className="text-sm" />
-              <FaLinux className="text-sm" />
-            </span>
-          </Link>
+          {platformData?.url ? (
+            <Link 
+              href={platformData.url} 
+              className="btn-primary flex items-center justify-center gap-3 w-full sm:w-auto"
+            >
+              <PlatformIcon className="text-xl" />
+              <span>Download {platformData.version} for {platformName}</span>
+            </Link>
+          ) : (
+            <Link 
+              href="https://github.com/codad5/google-task-desktop/releases/latest"
+              className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
+            >
+              <FaDownload />
+              Download Latest
+            </Link>
+          )}
           
           <Link 
             href="https://github.com/codad5/google-task-desktop"
@@ -118,10 +144,17 @@ export default async function Hero() {
           </Link>
         </div>
 
-        {/* Version badge */}
-        <p className="text-sm text-[var(--color-text-muted)] text-center">
-          {latestVersion !== 'latest' ? latestVersion : ''} • Available for Windows, macOS, and Linux
-        </p>
+        {/* Other platforms link */}
+        <Link 
+          href="https://github.com/codad5/google-task-desktop/releases/latest"
+          target="_blank"
+          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+        >
+          Also available for{' '}
+          {platformData?.platform !== 'windows' && 'Windows, '}
+          {platformData?.platform !== 'mac' && platformData?.platform !== 'darwin' && 'macOS, '}
+          {platformData?.platform !== 'linux' && 'Linux'}
+        </Link>
       </div>
     </section>
   );
