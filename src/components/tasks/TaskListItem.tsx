@@ -364,13 +364,6 @@ export default function TaskListItem({
                   >
                     <CalendarMonth fontSize="small" />
                   </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => setTimeAnchorEl(e.currentTarget)}
-                    sx={{ border: 1, borderColor: "divider" }}
-                  >
-                    <AccessTime fontSize="small" />
-                  </IconButton>
                   
                   {/* Move to list icon */}
                   <IconButton
