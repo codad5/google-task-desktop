@@ -24,7 +24,7 @@ Built with **Tauri** | **React** | **TypeScript** | **Rust**
 - 📁 **Multiple Task Lists** - Organize tasks in separate lists
 - ⭐ **Star Important Tasks** - Quick access to starred tasks view
 - 📅 **Due Dates** - Set due dates with Today/Tomorrow shortcuts
-- 🔔 **Desktop Notifications** - Get notified at 9 AM on due dates
+- 🔔 **Desktop Notifications** - Configurable reminder time on due dates
 
 ### Advanced Features
 - ✏️ **Inline Editing** - Click any task to edit in place

@@ -5,16 +5,12 @@
  * Uses Tauri commands to communicate with Rust backend.
  * 
  * NOTE: Google Tasks API only supports due DATES, not times.
- * Notifications are triggered at 9 AM on the due date.
+ * Notifications are triggered at the user-configured hour on the due date.
  */
 
 import { invoke } from '@tauri-apps/api/tauri';
 import { AppTask } from '../types/app';
-
-/**
- * What hour of the day to notify (9 AM)
- */
-const NOTIFY_HOUR = 9;
+import { getNotificationHour } from './settings.service';
 
 /**
  * Track scheduled task IDs to prevent duplicates
@@ -23,7 +19,7 @@ const scheduledTaskIds = new Set<string>();
 
 /**
  * Schedule a notification for a task
- * Schedules for 9 AM on the due date
+ * Schedules for the configured hour on the due date
  */
 export async function scheduleTaskNotification(task: AppTask): Promise<boolean> {
   // Skip if no due date or already completed
@@ -36,10 +32,13 @@ export async function scheduleTaskNotification(task: AppTask): Promise<boolean> 
     await cancelTaskNotification(task.id);
   }
 
+  // Get user's preferred notification hour
+  const notifyHour = await getNotificationHour();
+
   const dueDate = new Date(task.due);
-  // Set notification for 9 AM on the due date
+  // Set notification for configured hour on the due date
   const notifyAt = new Date(dueDate);
-  notifyAt.setHours(NOTIFY_HOUR, 0, 0, 0);
+  notifyAt.setHours(notifyHour, 0, 0, 0);
 
   // Don't schedule if already past notification time
   if (notifyAt <= new Date()) {
@@ -117,6 +116,14 @@ export async function scheduleAllTaskNotifications(tasks: AppTask[]): Promise<nu
 
   console.debug(`Scheduled ${scheduled}/${eligibleTasks.length} task notifications`);
   return scheduled;
+}
+
+/**
+ * Reschedule ALL notifications (called when notification hour changes)
+ */
+export async function rescheduleAllNotifications(tasks: AppTask[]): Promise<number> {
+  await cancelAllNotifications();
+  return scheduleAllTaskNotifications(tasks);
 }
 
 /**
