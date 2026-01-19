@@ -38,3 +38,10 @@ dist-ssr
 *.crt
 *.p12
 *.pfx
+
+# Tauri
+src-tauri/target
+
+# next build 
+.next
+

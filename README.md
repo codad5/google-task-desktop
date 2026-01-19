@@ -10,7 +10,7 @@ Built with **Tauri** | **React** | **TypeScript** | **Rust**
 [![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-1.4-orange.svg)](https://tauri.app)
 
-![Screenshot](dist/assets/screenshot.png)
+![Screenshot](screenshot.png)
 
 </div>
 
