@@ -103,6 +103,12 @@ export function formatHour(hour: number): string {
  */
 export function getNotificationHourOptions(): { value: number; label: string }[] {
   return [
+    { value: 0, label: '12:00 AM' },
+    { value: 1, label: '1:00 AM' },
+    { value: 2, label: '2:00 AM' },
+    { value: 3, label: '3:00 AM' },
+    { value: 4, label: '4:00 AM' },
+    { value: 5, label: '5:00 AM' },
     { value: 6, label: '6:00 AM' },
     { value: 7, label: '7:00 AM' },
     { value: 8, label: '8:00 AM' },
@@ -119,5 +125,7 @@ export function getNotificationHourOptions(): { value: number; label: string }[]
     { value: 19, label: '7:00 PM' },
     { value: 20, label: '8:00 PM' },
     { value: 21, label: '9:00 PM' },
+    { value: 22, label: '10:00 PM' },
+    { value: 23, label: '11:00 PM' },
   ];
 }
