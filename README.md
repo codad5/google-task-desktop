@@ -100,7 +100,7 @@ VITE_GOOGLE_CLIENT_SECRET=your_client_secret
 | **No due times** | Google Tasks API only supports dates, not times |
 | **No offline mode** | Planned for future release |
 
-> **Note**: Notifications are triggered at 9 AM on the due date due to API limitations.
+> **Note**: Notifications are triggered at your configured time on the due date (default: 9 AM). Change it in Settings.
 
 ## 🗺️ Roadmap
 
