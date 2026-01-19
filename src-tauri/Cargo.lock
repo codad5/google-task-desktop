@@ -747,8 +747,10 @@ checksum = "c469d952047f47f91b68d1cba3f10d63c11d73e4636f24f08daf0278abf01c4d"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link 0.1.3",
 ]
 
@@ -1830,6 +1832,7 @@ name = "google-task"
 version = "0.0.1"
 dependencies = [
  "borsh",
+ "chrono",
  "cocoon",
  "dotenv",
  "lazy_static",
@@ -1841,6 +1844,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-context-menu",
  "tauri-plugin-log",
+ "tauri-plugin-oauth",
  "tauri-plugin-single-instance",
  "tauri-plugin-store",
  "tauri-specta",
@@ -4746,6 +4750,19 @@ dependencies = [
  "serde_repr",
  "tauri",
  "time",
+]
+
+[[package]]
+name = "tauri-plugin-oauth"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f16024d111ceeb8c633bff3f17299eb4ded2a8c9eed899e18c2db5462464ff4"
+dependencies = [
+ "httparse",
+ "log",
+ "serde",
+ "tauri",
+ "url",
 ]
 
 [[package]]
