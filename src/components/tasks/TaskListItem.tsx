@@ -428,34 +428,6 @@ export default function TaskListItem({
                     />
                   </Box>
                 </Popover>
-
-                {/* Time Picker Popover */}
-                <Popover
-                  open={Boolean(timeAnchorEl)}
-                  anchorEl={timeAnchorEl}
-                  onClose={() => setTimeAnchorEl(null)}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                >
-                  <Box sx={{ p: 2 }}>
-                    <TextField
-                      type="time"
-                      fullWidth
-                      size="small"
-                      label="Set time"
-                      value={editDue ? `${String(editDue.getHours()).padStart(2, '0')}:${String(editDue.getMinutes()).padStart(2, '0')}` : ''}
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          const [hours, minutes] = e.target.value.split(":").map(Number);
-                          const newDate = editDue ? new Date(editDue) : new Date();
-                          newDate.setHours(hours, minutes, 0, 0);
-                          setEditDue(newDate);
-                          setTimeAnchorEl(null);
-                        }
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Box>
-                </Popover>
               </Box>
             ) : (
               <>
