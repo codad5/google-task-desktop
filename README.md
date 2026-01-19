@@ -1,93 +1,153 @@
+<div align="center">
+
 # Google Task Desktop
 
-An unofficial, lightweight desktop client for Google Tasks built with **Tauri**, **React**, **TypeScript**, and **Rust**.
+**An unofficial, lightweight desktop client for Google Tasks**
+
+Built with **Tauri** | **React** | **TypeScript** | **Rust**
+
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/codad5/google-task-desktop/releases)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-1.4-orange.svg)](https://tauri.app)
 
 ![Screenshot](dist/assets/screenshot.png)
 
-## Features
+</div>
 
-### Core
-- ✅ Google OAuth authentication
-- ✅ View all task lists and tasks
-- ✅ Create, edit, and delete tasks
-- ✅ Mark tasks complete/incomplete
-- ✅ Star/unstar important tasks
-- ✅ Create and manage subtasks
-- ✅ Move tasks between lists
+---
 
-### Advanced
-- ✅ Inline task editing (click to edit title, notes, due date)
-- ✅ Drag-and-drop task reordering
-- ✅ Due date/time picker with Today/Tomorrow quick chips
-- ✅ Task due time notifications (OS native)
-- ✅ Collapsible sidebar with list visibility toggles
-- ✅ Starred tasks view across all lists
-- ✅ Multi-account support (sign out and sign in with another account)
+## ✨ Features
 
-## Tech Stack
+### Core Functionality
+- 📋 **Full Google Tasks Integration** - Sync with your Google account
+- ✅ **Create, Edit, Delete Tasks** - Full CRUD operations
+- 📁 **Multiple Task Lists** - Organize tasks in separate lists
+- ⭐ **Star Important Tasks** - Quick access to starred tasks view
+- 📅 **Due Dates** - Set due dates with Today/Tomorrow shortcuts
+- 🔔 **Desktop Notifications** - Get notified at 9 AM on due dates
 
-- **Frontend**: React + TypeScript + Material-UI (MUI)
-- **Backend**: Rust + Tauri
-- **State Management**: Recoil (minimal, UI-only)
-- **Architecture**: Layered (API Client → Repository → Service → Hooks → Components)
+### Advanced Features
+- ✏️ **Inline Editing** - Click any task to edit in place
+- 🔃 **Drag-and-Drop** - Reorder tasks within lists
+- 📎 **Subtasks** - Create and manage subtasks
+- 👁️ **Collapsible Sidebar** - Show/hide lists with visibility toggles
+- 🔄 **Multi-Account** - Switch between Google accounts
+- 🎨 **Modern UI** - Clean Material Design interface
 
-## Prerequisites
+## 🛠️ Tech Stack
 
-- [Rust](https://www.rust-lang.org/tools/install)
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, TypeScript, Material-UI |
+| **Backend** | Rust, Tauri 1.4 |
+| **State** | Recoil (minimal, UI-only) |
+| **Architecture** | Layered (Repository → Service → Hooks → Components) |
+
+## 📥 Installation
+
+### From Releases
+
+Download the latest release for your platform from the [Releases](https://github.com/codad5/google-task-desktop/releases) page.
+
+### From Source
+
+#### Prerequisites
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable)
 - [Node.js](https://nodejs.org/) (v18+)
-- Cargo (comes with Rust)
 
-## Installation
+#### Steps
 
 ```bash
+# Clone the repository
 git clone https://github.com/codad5/google-task-desktop.git
 cd google-task-desktop
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run launch:dev
+
+# Build for production
+npm run tauri build
 ```
 
-## Setup
+## ⚙️ Configuration
 
-### Google Cloud Configuration
+### Google OAuth Setup
 
-1. Create a new project on [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable the **Google Tasks API**
-3. Create OAuth 2.0 credentials (Desktop app)
-4. Copy the Client ID and Client Secret
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project
+3. Enable **Google Tasks API**
+4. Create **OAuth 2.0 Client ID** (Desktop application)
 5. Create a `.env` file:
-   ```
-   VITE_GOOGLE_CLIENT_ID=<YOUR_CLIENT_ID>
-   VITE_GOOGLE_CLIENT_SECRET=<YOUR_CLIENT_SECRET>
-   ```
 
-### IDE Setup (Recommended)
+```env
+VITE_GOOGLE_CLIENT_ID=your_client_id
+VITE_GOOGLE_CLIENT_SECRET=your_client_secret
+```
 
-- [VS Code](https://code.visualstudio.com/)
-- [Tauri Extension](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode)
-- [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## 📖 Documentation
 
-## Roadmap
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Detailed codebase architecture
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - How to contribute
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
 
-- [x] Login/Authentication
-- [x] Task lists CRUD
-- [x] Tasks CRUD with subtasks
-- [x] Star/unstar tasks
-- [x] Due date/time with notifications
+## ⚠️ Known Limitations
+
+| Limitation | Reason |
+|------------|--------|
+| **No due times** | Google Tasks API only supports dates, not times |
+| **No offline mode** | Planned for future release |
+
+> **Note**: Notifications are triggered at 9 AM on the due date due to API limitations.
+
+## 🗺️ Roadmap
+
+- [x] Core task management
 - [x] Inline editing
 - [x] Drag-and-drop reordering
-- [x] Multi-account support
-- [x] Proper state management (Recoil)
+- [x] Starred tasks
+- [x] Desktop notifications
 - [ ] Global keyboard shortcuts
 - [ ] Offline support with sync
+- [ ] Dark mode
+- [ ] Recurring tasks
 
-## Architecture
+## 👨‍💻 Author
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for a detailed explanation of the codebase structure and design patterns.
+**Aniezeofor Chibueze Michael (Codad5)**
 
-## License
+- GitHub: [@codad5](https://github.com/codad5)
+- Website: [codad5.me](https://codad5.me)
+- Twitter: [@codaborealise](https://twitter.com/codaborealise)
 
-[GPL-3.0](LICENSE)
+## 🤝 Contributing
 
-## Contributing
+Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the **GPL-3.0 License** - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Tauri](https://tauri.app) - For the amazing cross-platform framework
+- [Material-UI](https://mui.com) - For the beautiful React components
+- [Google Tasks API](https://developers.google.com/tasks) - For the backend integration
+
+---
+
+<div align="center">
+
+**If you find this project helpful, please consider giving it a ⭐!**
+
+[Report Bug](https://github.com/codad5/google-task-desktop/issues) · [Request Feature](https://github.com/codad5/google-task-desktop/issues)
+
+</div>

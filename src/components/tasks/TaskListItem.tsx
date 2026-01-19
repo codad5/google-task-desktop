@@ -45,7 +45,6 @@ import {
   AddTask,
   Close,
   CalendarMonth,
-  AccessTime,
   OpenWith,
 } from "@mui/icons-material";
 import { AppTask } from "../../types/app";
@@ -77,18 +76,13 @@ const formatDueDate = (date: string | undefined) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const isOverdue = dueDate < today && dueDate.toDateString() !== today.toDateString();
-  const hasTime = dueDate.getHours() !== 23 || dueDate.getMinutes() !== 59;
-  const timeStr = dueDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   
   let dateLabel = "";
   if (dueDate.toDateString() === today.toDateString()) {
-    // Today: show time only (or "Today" if no specific time)
-    dateLabel = hasTime ? timeStr : "Today";
+    dateLabel = "Today";
   } else if (dueDate.toDateString() === tomorrow.toDateString()) {
-    // Tomorrow: show "Tomorrow" + time
-    dateLabel = hasTime ? `Tomorrow, ${timeStr}` : "Tomorrow";
+    dateLabel = "Tomorrow";
   } else {
-    // Other dates: just show the date
     dateLabel = dueDate.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 
@@ -117,7 +111,6 @@ export default function TaskListItem({
   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [dateAnchorEl, setDateAnchorEl] = useState<HTMLElement | null>(null);
-  const [timeAnchorEl, setTimeAnchorEl] = useState<HTMLElement | null>(null);
   
   const editInputRef = useRef<HTMLInputElement>(null);
   const subtaskInputRef = useRef<HTMLInputElement>(null);

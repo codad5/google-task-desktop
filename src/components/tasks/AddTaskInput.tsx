@@ -11,7 +11,6 @@ import {
   EditOutlined,
   Today,
   CalendarMonth,
-  AccessTime,
 } from "@mui/icons-material";
 
 interface AddTaskInputProps {
@@ -24,7 +23,6 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
   const [taskDetails, setTaskDetails] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [timeAnchorEl, setTimeAnchorEl] = useState<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleExpand = () => {
@@ -71,18 +69,13 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
     const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const hasTime = date.getHours() !== 23 || date.getMinutes() !== 59;
-    const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     if (date.toDateString() === today.toDateString()) {
-      // Today: show time only (or "Today" if no specific time)
-      return hasTime ? timeStr : "Today";
+      return "Today";
     }
     if (date.toDateString() === tomorrow.toDateString()) {
-      // Tomorrow: show "Tomorrow" + time
-      return hasTime ? `Tomorrow, ${timeStr}` : "Tomorrow";
+      return "Tomorrow";
     }
-    // Other dates: just show the date
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
@@ -195,13 +188,6 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
         >
           <CalendarMonth fontSize="small" />
         </IconButton>
-        <IconButton
-          size="small"
-          onClick={(e) => setTimeAnchorEl(e.currentTarget)}
-          sx={{ border: 1, borderColor: "divider" }}
-        >
-          <AccessTime fontSize="small" />
-        </IconButton>
 
         {/* Show selected date */}
         {dueDate && (
@@ -242,7 +228,7 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
         </Button>
       </Box>
 
-      {/* Calendar Popover */}
+      {/* Date Picker Popover */}
       <Popover
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
@@ -258,42 +244,9 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
             onChange={(e) => {
               if (e.target.value) {
                 const newDate = new Date(e.target.value);
-                // Preserve existing time or set to 23:59
-                newDate.setHours(
-                  dueDate?.getHours() ?? 23,
-                  dueDate?.getMinutes() ?? 59,
-                  0, 0
-                );
+                newDate.setHours(23, 59, 0, 0); // End of day
                 setDueDate(newDate);
                 setAnchorEl(null);
-              }
-            }}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Box>
-      </Popover>
-
-      {/* Time Picker Popover */}
-      <Popover
-        open={Boolean(timeAnchorEl)}
-        anchorEl={timeAnchorEl}
-        onClose={() => setTimeAnchorEl(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-      >
-        <Box sx={{ p: 2, minWidth: 150 }}>
-          <TextField
-            type="time"
-            fullWidth
-            size="small"
-            label="Set time"
-            value={dueDate ? `${String(dueDate.getHours()).padStart(2, '0')}:${String(dueDate.getMinutes()).padStart(2, '0')}` : ''}
-            onChange={(e) => {
-              if (e.target.value) {
-                const [hours, minutes] = e.target.value.split(":").map(Number);
-                const newDate = dueDate ? new Date(dueDate) : new Date();
-                newDate.setHours(hours, minutes, 0, 0);
-                setDueDate(newDate);
-                setTimeAnchorEl(null);
               }
             }}
             InputLabelProps={{ shrink: true }}

@@ -3,15 +3,18 @@
  * 
  * Schedules OS notifications for tasks with due dates.
  * Uses Tauri commands to communicate with Rust backend.
+ * 
+ * NOTE: Google Tasks API only supports due DATES, not times.
+ * Notifications are triggered at 9 AM on the due date.
  */
 
 import { invoke } from '@tauri-apps/api/tauri';
 import { AppTask } from '../types/app';
 
 /**
- * How many minutes before due time to notify
+ * What hour of the day to notify (9 AM)
  */
-const NOTIFY_BEFORE_MINUTES = 15;
+const NOTIFY_HOUR = 9;
 
 /**
  * Track scheduled task IDs to prevent duplicates
@@ -20,7 +23,7 @@ const scheduledTaskIds = new Set<string>();
 
 /**
  * Schedule a notification for a task
- * Automatically handles updates by canceling existing notification first
+ * Schedules for 9 AM on the due date
  */
 export async function scheduleTaskNotification(task: AppTask): Promise<boolean> {
   // Skip if no due date or already completed
@@ -34,7 +37,9 @@ export async function scheduleTaskNotification(task: AppTask): Promise<boolean> 
   }
 
   const dueDate = new Date(task.due);
-  const notifyAt = new Date(dueDate.getTime() - NOTIFY_BEFORE_MINUTES * 60 * 1000);
+  // Set notification for 9 AM on the due date
+  const notifyAt = new Date(dueDate);
+  notifyAt.setHours(NOTIFY_HOUR, 0, 0, 0);
 
   // Don't schedule if already past notification time
   if (notifyAt <= new Date()) {
@@ -45,13 +50,13 @@ export async function scheduleTaskNotification(task: AppTask): Promise<boolean> 
   try {
     await invoke('schedule_notification', {
       taskId: task.id,
-      title: `⏰ ${task.title}`,
-      body: task.notes || `Due at ${dueDate.toLocaleTimeString()}`,
+      title: `📋 ${task.title}`,
+      body: `Due today`,
       notifyAtIso: notifyAt.toISOString(),
     });
     
     scheduledTaskIds.add(task.id);
-    console.debug(`Scheduled notification for "${task.title}" at ${notifyAt.toLocaleTimeString()}`);
+    console.debug(`Scheduled notification for "${task.title}" at ${notifyAt.toLocaleString()}`);
     return true;
   } catch (error) {
     console.error('Failed to schedule notification:', error);
@@ -101,7 +106,7 @@ export async function scheduleAllTaskNotifications(tasks: AppTask[]): Promise<nu
   const eligibleTasks = tasks.filter(t => 
     t.due && 
     t.status !== 'completed' &&
-    new Date(t.due) > new Date()
+    new Date(t.due) >= new Date()
   );
 
   let scheduled = 0;
