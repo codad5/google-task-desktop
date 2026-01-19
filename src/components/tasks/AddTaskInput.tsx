@@ -9,7 +9,6 @@ import {
 } from "@mui/material";
 import {
   EditOutlined,
-  Add,
   Today,
   CalendarMonth,
   AccessTime,
@@ -238,7 +237,7 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
         </Button>
       </Box>
 
-      {/* Calendar Popover (placeholder - would need date picker library) */}
+      {/* Calendar Popover */}
       <Popover
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
@@ -250,9 +249,17 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
             type="date"
             fullWidth
             size="small"
+            value={dueDate ? dueDate.toISOString().split('T')[0] : ''}
             onChange={(e) => {
               if (e.target.value) {
-                setDueDate(new Date(e.target.value));
+                const newDate = new Date(e.target.value);
+                // Preserve existing time or set to 23:59
+                newDate.setHours(
+                  dueDate?.getHours() ?? 23,
+                  dueDate?.getMinutes() ?? 59,
+                  0, 0
+                );
+                setDueDate(newDate);
                 setAnchorEl(null);
               }
             }}
@@ -274,6 +281,7 @@ export default function AddTaskInput({ onAdd }: AddTaskInputProps) {
             fullWidth
             size="small"
             label="Set time"
+            value={dueDate ? `${String(dueDate.getHours()).padStart(2, '0')}:${String(dueDate.getMinutes()).padStart(2, '0')}` : ''}
             onChange={(e) => {
               if (e.target.value) {
                 const [hours, minutes] = e.target.value.split(":").map(Number);

@@ -424,6 +424,7 @@ export default function TaskListItem({
                       type="date"
                       fullWidth
                       size="small"
+                      value={editDue ? editDue.toISOString().split('T')[0] : ''}
                       onChange={(e) => {
                         if (e.target.value) {
                           const newDate = new Date(e.target.value);
@@ -450,6 +451,7 @@ export default function TaskListItem({
                       fullWidth
                       size="small"
                       label="Set time"
+                      value={editDue ? `${String(editDue.getHours()).padStart(2, '0')}:${String(editDue.getMinutes()).padStart(2, '0')}` : ''}
                       onChange={(e) => {
                         if (e.target.value) {
                           const [hours, minutes] = e.target.value.split(":").map(Number);
