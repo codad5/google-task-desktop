@@ -45,7 +45,6 @@ import {
   AddTask,
   Close,
   CalendarMonth,
-  AccessTime,
   OpenWith,
 } from "@mui/icons-material";
 import { AppTask } from "../../types/app";
@@ -112,7 +111,6 @@ export default function TaskListItem({
   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const [dateAnchorEl, setDateAnchorEl] = useState<HTMLElement | null>(null);
-  const [timeAnchorEl, setTimeAnchorEl] = useState<HTMLElement | null>(null);
   
   const editInputRef = useRef<HTMLInputElement>(null);
   const subtaskInputRef = useRef<HTMLInputElement>(null);
@@ -366,13 +364,6 @@ export default function TaskListItem({
                   >
                     <CalendarMonth fontSize="small" />
                   </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => setTimeAnchorEl(e.currentTarget)}
-                    sx={{ border: 1, borderColor: "divider" }}
-                  >
-                    <AccessTime fontSize="small" />
-                  </IconButton>
                   
                   {/* Move to list icon */}
                   <IconButton
@@ -424,39 +415,13 @@ export default function TaskListItem({
                       type="date"
                       fullWidth
                       size="small"
+                      value={editDue ? editDue.toISOString().split('T')[0] : ''}
                       onChange={(e) => {
                         if (e.target.value) {
                           const newDate = new Date(e.target.value);
                           newDate.setHours(editDue?.getHours() || 23, editDue?.getMinutes() || 59);
                           setEditDue(newDate);
                           setDateAnchorEl(null);
-                        }
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Box>
-                </Popover>
-
-                {/* Time Picker Popover */}
-                <Popover
-                  open={Boolean(timeAnchorEl)}
-                  anchorEl={timeAnchorEl}
-                  onClose={() => setTimeAnchorEl(null)}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                >
-                  <Box sx={{ p: 2 }}>
-                    <TextField
-                      type="time"
-                      fullWidth
-                      size="small"
-                      label="Set time"
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          const [hours, minutes] = e.target.value.split(":").map(Number);
-                          const newDate = editDue ? new Date(editDue) : new Date();
-                          newDate.setHours(hours, minutes, 0, 0);
-                          setEditDue(newDate);
-                          setTimeAnchorEl(null);
                         }
                       }}
                       InputLabelProps={{ shrink: true }}

@@ -13,6 +13,7 @@ import {
   toastAtom,
   starredTaskIdsAtom,
 } from "../store";
+import { scheduleAllTaskNotifications } from "../services/notification.service";
 import { useServices } from "./useServices";
 import { AppTaskList } from "../types/app";
 
@@ -40,6 +41,10 @@ export function useTaskLists() {
       // Update starred IDs
       const starredIds = await starred.getAll();
       setStarredIds(starredIds);
+
+      // Schedule notifications for all tasks with due dates
+      const allTasks = lists.flatMap(list => list.tasks);
+      await scheduleAllTaskNotifications(allTasks);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load task lists";
       setError(message);

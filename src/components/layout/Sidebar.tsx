@@ -29,11 +29,13 @@ import {
   FormatListBulleted,
   ChevronLeft,
   ChevronRight,
+  Settings,
 } from "@mui/icons-material";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { viewStateAtom, starredTaskIdsAtom } from "../../store";
 import { useTaskLists } from "../../hooks";
 import AddCategoryDialog from "../ui/AddCategoryDialog";
+import SettingsDialog from "../ui/SettingsDialog";
 
 interface SidebarProps {
   onViewChange?: (view: "all" | "starred" | "list", listId?: string) => void;
@@ -43,6 +45,7 @@ export default function Sidebar({ onViewChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [listsExpanded, setListsExpanded] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [viewState, setViewState] = useRecoilState(viewStateAtom);
   const starredIds = useRecoilValue(starredTaskIdsAtom);
   const { taskLists, toggleListVisibility } = useTaskLists();
@@ -317,11 +320,39 @@ export default function Sidebar({ onViewChange }: SidebarProps) {
             </Collapse>
           </>
         )}
+
+        {/* Spacer */}
+        <Box sx={{ flex: 1 }} />
+
+        {/* Settings Button */}
+        <Divider />
+        <ListItemButton
+          onClick={() => setShowSettings(true)}
+          sx={{
+            py: 1.5,
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 40 }}>
+            <Settings fontSize="small" />
+          </ListItemIcon>
+          {!isCollapsed && (
+            <ListItemText
+              primary="Settings"
+              primaryTypographyProps={{ variant: "body2" }}
+            />
+          )}
+        </ListItemButton>
       </Box>
 
       <AddCategoryDialog
         open={showAddCategory}
         onClose={() => setShowAddCategory(false)}
+      />
+
+      <SettingsDialog
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
       />
     </>
   );

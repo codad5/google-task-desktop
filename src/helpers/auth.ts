@@ -9,7 +9,7 @@ import { AccessToken } from "./commands";
 import { setRecoil } from "recoil-nexus";
 import { accessTokenState, activeCategoryTasksState, activeTaskCategoryState, authLoadingState, messageState, userProfileState } from "../config/states";
 import { pushNotification } from "./windowhelper";
-
+import { cancelAllNotifications } from "../services/notification.service";
 
 const DEFAULT_DIRECTORY = settings.fs.DEFAULT_DIRECTORY;
 const GOOGLE_OAUTH_ENDPOINT = settings.auth.GOOGLE_OAUTH_ENDPOINT;
@@ -297,6 +297,14 @@ export async function handleLogout() {
         console.log("handleLogout: access token deleted");
       } catch (e) {
         console.log("handleLogout: error deleting token (may not exist)", e);
+      }
+      
+      // Cancel all scheduled notifications
+      try {
+        await cancelAllNotifications();
+        console.log("handleLogout: notifications cancelled");
+      } catch (e) {
+        console.log("handleLogout: error cancelling notifications", e);
       }
       
       console.log("handleLogout: complete");

@@ -42,11 +42,12 @@ export class TaskListRepository implements ITaskListRepository {
 
   /**
    * Update a task list
+   * Note: Google Tasks API requires id in the request body for PUT
    */
   async update(id: string, data: TaskListRequestBody): Promise<GoogleTaskList> {
     return this.client.put<GoogleTaskList>(
       GOOGLE_TASKS_API.TASK_LISTS.update(id),
-      data
+      { ...data, id }  // Include id in body
     );
   }
 
