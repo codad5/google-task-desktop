@@ -119,8 +119,5 @@ export function getNotificationHourOptions(): { value: number; label: string }[]
     { value: 19, label: '7:00 PM' },
     { value: 20, label: '8:00 PM' },
     { value: 21, label: '9:00 PM' },
-    { value: 22, label: '10:00 PM' },
-    { value: 23, label: '11:00 PM' },
-    { value: 24, label: '12:00 AM' },
   ];
 }
